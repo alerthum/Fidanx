@@ -19,7 +19,9 @@ export class PlantsService {
         kod4?: string;
         kod5?: string;
         parentId?: string; // Ana Ağaç ID'si
-        type?: 'MOTHER_TREE' | 'CUTTING' | 'GRAFT'; // Ana Ağaç mı yoksa Dal mı?
+        type?: 'MOTHER_TREE' | 'CUTTING' | 'GRAFT' | 'PACKAGING'; // Tip
+        volume?: string; // Hacim (Litre vb.)
+        dimensions?: string; // Ölçüler (Çap x Yükseklik vb.)
     }) {
         const docRef = await this.plants(tenantId).add({
             ...data,

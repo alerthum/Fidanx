@@ -13,6 +13,8 @@ interface Plant {
     kod4?: string;
     kod5?: string;
     type?: string;
+    volume?: string;
+    dimensions?: string;
     createdAt: string;
 }
 
@@ -29,7 +31,9 @@ export default function StoklarPage() {
         kod3: '',
         kod4: '',
         kod5: '',
-        type: 'CUTTING'
+        type: 'CUTTING',
+        volume: '',
+        dimensions: ''
     });
 
     const [error, setError] = useState<string | null>(null);
@@ -70,7 +74,7 @@ export default function StoklarPage() {
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING' });
+                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '' });
                 fetchPlants();
             }
         } catch (err) {
@@ -130,12 +134,19 @@ export default function StoklarPage() {
                                         <tr key={plant.id} className="hover:bg-slate-50 transition group text-sm">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <span className="text-2xl">{plant.type === 'MOTHER_TREE' ? '🌳' : '🌱'}</span>
+                                                    <span className="text-2xl">
+                                                        {plant.type === 'MOTHER_TREE' ? '🌳' : plant.type === 'PACKAGING' ? '📦' : '🌱'}
+                                                    </span>
                                                     <div>
                                                         <p className="font-bold text-slate-700">{plant.name}</p>
                                                         <p className="text-[10px] text-emerald-600 font-black uppercase tracking-tighter">
-                                                            {plant.type === 'MOTHER_TREE' ? '• ANA AĞAÇ' : '• ÜRETİM MATERYALİ'}
+                                                            {plant.type === 'MOTHER_TREE' ? '• ANA AĞAÇ' : plant.type === 'PACKAGING' ? '• AMBALAJ / SAKSI' : '• ÜRETİM MATERYALİ'}
                                                         </p>
+                                                        {(plant.volume || plant.dimensions) && (
+                                                            <p className="text-[9px] text-slate-400 font-bold mt-0.5">
+                                                                {plant.volume && `[${plant.volume}]`} {plant.dimensions && `(${plant.dimensions})`}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -153,7 +164,15 @@ export default function StoklarPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button className="bg-slate-50 text-slate-400 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded text-[10px] font-black uppercase transition-all duration-300">DÜZENLE</button>
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => alert(`Barkod Basılıyor: ${plant.sku || plant.id}`)}
+                                                        className="bg-slate-800 text-white px-3 py-1.5 rounded text-[10px] font-black uppercase transition-all shadow-md active:scale-95"
+                                                    >
+                                                        BARKOD
+                                                    </button>
+                                                    <button className="bg-slate-50 text-slate-400 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded text-[10px] font-black uppercase transition-all">DÜZENLE</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -222,14 +241,40 @@ export default function StoklarPage() {
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Fidan Tipi</label>
                                     <select
                                         value={newPlant.type}
-                                        onChange={(e) => setNewPlant({ ...newPlant, type: e.target.value })}
+                                        onChange={(e) => setNewPlant({ ...newPlant, type: e.target.value as 'CUTTING' | 'MOTHER_TREE' | 'GRAFT' | 'PACKAGING' })}
                                         className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm shadow-sm transition"
                                     >
                                         <option value="MOTHER_TREE">🌳 Ana Ağaç (Damlama/Çelik Kaynağı)</option>
                                         <option value="CUTTING">🌱 Üretim Materyali (Dal/Fide)</option>
+                                        <option value="PACKAGING">📦 Ambalaj / Saksı / Kap</option>
                                         <option value="GRAFT">🌿 Aşı Materyali</option>
                                     </select>
                                 </div>
+
+                                {newPlant.type === 'PACKAGING' && (
+                                    <div className="col-span-2 grid grid-cols-2 gap-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 animate-in fade-in slide-in-from-left-2 transition-all">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-emerald-600 uppercase mb-1.5">Hacim / Kapasite (Litre)</label>
+                                            <input
+                                                type="text"
+                                                value={newPlant.volume}
+                                                onChange={(e) => setNewPlant({ ...newPlant, volume: e.target.value })}
+                                                className="w-full px-4 py-2 rounded-lg border border-emerald-200 outline-none focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                                                placeholder="Örn: 5L, 10L"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black text-emerald-600 uppercase mb-1.5">Ölçüler (Çap x Boy)</label>
+                                            <input
+                                                type="text"
+                                                value={newPlant.dimensions}
+                                                onChange={(e) => setNewPlant({ ...newPlant, dimensions: e.target.value })}
+                                                className="w-full px-4 py-2 rounded-lg border border-emerald-200 outline-none focus:ring-2 focus:ring-emerald-500/20 text-sm"
+                                                placeholder="Örn: 20x25 cm"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="col-span-2 p-6 bg-slate-50 rounded-xl border border-slate-100">
                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Grup Kodları (ERP & Raporlama)</div>
