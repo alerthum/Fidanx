@@ -8,10 +8,11 @@ export default function Sidebar() {
 
     const menuItems = [
         { name: 'Kontrol Paneli', path: '/', icon: '📊' },
+        { name: 'Üretim Takibi', path: '/uretim', icon: '🚜' },
+        { name: 'Reçete Yönetimi', path: '/receteler', icon: '🧪' },
         { name: 'Stok Yönetimi', path: '/stoklar', icon: '🌱' },
         { name: 'Firma Yönetimi', path: '/firmalar', icon: '🏢' },
         { name: 'Satışlar', path: '/satislar', icon: '💰' },
-        { name: 'Üretim Takibi', path: '/uretim', icon: '🚜' },
         { name: 'Analizler', path: '/analizler', icon: '📈' },
         { name: 'Destek & Feedback', path: '/destek', icon: '💬' },
         { name: 'Ayarlar', path: '/ayarlar', icon: '⚙️' },

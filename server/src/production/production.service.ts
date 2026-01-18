@@ -5,61 +5,94 @@ import { FirebaseService } from '../firebase/firebase.service';
 export class ProductionService {
     constructor(private firebase: FirebaseService) { }
 
-    private batches(tenantId: string) {
-        return this.firebase.db.collection('tenants').doc(tenantId).collection('batches');
+    private production(tenantId: string) {
+        return this.firebase.db.collection('tenants').doc(tenantId).collection('production');
     }
 
-    async createBatch(tenantId: string, plantId: string, quantity: number) {
-        const batchNumber = `BX-${Date.now()}`;
-        const data = {
-            batchNumber,
-            plantId,
-            quantity,
-            status: 'SOWING',
-            plantedAt: new Date(),
-        };
-        const docRef = await this.batches(tenantId).add(data);
-        return { id: docRef.id, ...data };
-    }
-
-    async addGrowthLog(tenantId: string, batchId: string, data: { note?: string; photoUrl?: string; height?: number }) {
-        const batchRef = this.batches(tenantId).doc(batchId);
-        const batch = await batchRef.get();
-
-        if (!batch.exists) {
-            throw new NotFoundException('Batch not found');
-        }
-
-        const logRef = await batchRef.collection('growthLogs').add({
+    async createBatch(tenantId: string, data: any) {
+        const lotId = data.lotId || `LOT-${Date.now()}`;
+        const finalData = {
             ...data,
-            createdAt: new Date(),
-        });
-
-        return { id: logRef.id, ...data };
+            lotId,
+            stage: data.stage || 'TEPSİ',
+            startDate: data.startDate || new Date(),
+            history: data.history || [{ date: new Date(), action: 'Üretim Başlatıldı' }]
+        };
+        const docRef = await this.production(tenantId).add(finalData);
+        return { id: docRef.id, ...finalData };
     }
 
-    async getBatchDetails(tenantId: string, barcode: string) {
-        const snapshot = await this.batches(tenantId)
-            .where('batchNumber', '==', barcode)
-            .limit(1)
-            .get();
+    async addHistoryLog(tenantId: string, batchId: string, log: { action: string; note?: string }) {
+        const docRef = this.production(tenantId).doc(batchId);
+        const doc = await docRef.get();
 
-        if (snapshot.empty) {
-            throw new NotFoundException('Batch not found');
+        if (!doc.exists) {
+            throw new NotFoundException('Üretim partisi bulunamadı.');
         }
 
-        const doc = snapshot.docs[0];
-        const logsSnapshot = await doc.ref.collection('growthLogs').orderBy('createdAt', 'desc').get();
+        const data = doc.data();
+        const history = data.history || [];
+        history.push({ ...log, date: new Date() });
+
+        await docRef.update({ history });
+        return { id: batchId, history };
+    }
+
+    async findAll(tenantId: string) {
+        const snapshot = await this.production(tenantId).orderBy('startDate', 'desc').get();
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                // Tarihleri ISO string'e çevirerek client tarafında sorunsuz okunmasını sağlıyoruz
+                startDate: data.startDate?.toDate ? data.startDate.toDate().toISOString() : data.startDate,
+                history: (data.history || []).map((h: any) => ({
+                    ...h,
+                    date: h.date?.toDate ? h.date.toDate().toISOString() : h.date
+                }))
+            };
+        });
+    }
+
+    async findOne(tenantId: string, id: string) {
+        const docRef = this.production(tenantId).doc(id);
+        const doc = await docRef.get();
+
+        let data: any;
+        let finalId = id;
+
+        if (!doc.exists) {
+            const snap = await this.production(tenantId).where('lotId', '==', id).limit(1).get();
+            if (snap.empty) throw new NotFoundException('Parti bulunamadı.');
+            data = snap.docs[0].data();
+            finalId = snap.docs[0].id;
+        } else {
+            data = doc.data();
+        }
 
         return {
-            id: doc.id,
-            ...doc.data(),
-            growthLogs: logsSnapshot.docs.map(l => ({ id: l.id, ...l.data() })),
+            id: finalId,
+            ...data,
+            startDate: data.startDate?.toDate ? data.startDate.toDate().toISOString() : data.startDate,
+            history: (data.history || []).map((h: any) => ({
+                ...h,
+                date: h.date?.toDate ? h.date.toDate().toISOString() : h.date
+            }))
         };
     }
 
-    async findAllBatches(tenantId: string) {
-        const snapshot = await this.batches(tenantId).orderBy('plantedAt', 'desc').get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    async updateStage(tenantId: string, id: string, stage: string, recipeId?: string) {
+        const docRef = this.production(tenantId).doc(id);
+        const updateData: any = { stage };
+        if (recipeId) updateData.recipeId = recipeId;
+
+        await docRef.update(updateData);
+        await this.addHistoryLog(tenantId, id, {
+            action: `Safha Güncellendi: ${stage}`,
+            note: recipeId ? `Yeni reçete uygulandı.` : undefined
+        });
+
+        return { id, stage };
     }
 }

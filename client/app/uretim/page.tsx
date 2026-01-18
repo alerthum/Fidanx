@@ -26,6 +26,34 @@ export default function UretimPage() {
         fetchRecipes();
     }, []);
 
+    // Tarih formatlama yardımcısı
+    const formatDate = (dateInput: any, includeTime = true) => {
+        if (!dateInput) return '-';
+        try {
+            let date: Date;
+
+            if (dateInput && typeof dateInput === 'object') {
+                // serialized Firestore timestamp (+ possible leading underscore from some serializations)
+                const seconds = dateInput.seconds || dateInput._seconds;
+                if (seconds) {
+                    date = new Date(seconds * 1000);
+                } else {
+                    date = new Date(dateInput);
+                }
+            } else {
+                date = new Date(dateInput);
+            }
+
+            if (isNaN(date.getTime())) return '-';
+
+            return date.toLocaleDateString('tr-TR', includeTime ? {
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            } : {
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            });
+        } catch (e) { return '-'; }
+    };
+
     const fetchRecipes = async () => {
         try {
             const res = await fetch(`${API_URL}/recipes?tenantId=demo-tenant`);
@@ -36,7 +64,7 @@ export default function UretimPage() {
 
     const fetchBatches = async () => {
         try {
-            const res = await fetch(`${API_URL}/production?tenantId=demo-tenant`);
+            const res = await fetch(`${API_URL}/production/batches?tenantId=demo-tenant`);
             const data = await res.json();
             setBatches(Array.isArray(data) ? data : []);
         } catch (err) { }
@@ -53,7 +81,7 @@ export default function UretimPage() {
     const handleAddBatch = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch(`${API_URL}/production?tenantId=demo-tenant`, {
+            const res = await fetch(`${API_URL}/production/batches?tenantId=demo-tenant`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newBatch),
@@ -162,13 +190,13 @@ export default function UretimPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1">
                                                 <span className={`w-fit px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${batch.stage === 'TEPSİ' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                        batch.stage === 'KÜÇÜK_SAKSI' ? 'bg-purple-50 text-purple-600 border-purple-100' :
-                                                            'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                    batch.stage === 'KÜÇÜK_SAKSI' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                                                        'bg-emerald-50 text-emerald-600 border-emerald-100'
                                                     }`}>
                                                     {batch.stage?.replace('_', ' ') || 'SAFHA BELİRSİZ'}
                                                 </span>
                                                 <p className="text-[9px] text-slate-400 font-medium">
-                                                    {batch.startDate ? new Date(batch.startDate).toLocaleDateString('tr-TR') : '-'} GİRİŞ
+                                                    {formatDate(batch.startDate, false)} GİRİŞ
                                                 </p>
                                             </div>
                                         </td>
@@ -236,7 +264,7 @@ export default function UretimPage() {
                                             <div key={i} className="relative pl-8">
                                                 <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-4 border-emerald-500 shadow-sm"></div>
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                                                    {new Date(h.date).toLocaleDateString('tr-TR')} {new Date(h.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                                    {formatDate(h.date)}
                                                 </p>
                                                 <p className="text-sm font-bold text-slate-700">{h.action}</p>
                                                 {h.note && <p className="text-xs text-slate-500 mt-1 italic">"{h.note}"</p>}

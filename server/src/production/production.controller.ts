@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Patch } from '@nestjs/common';
 import { ProductionService } from './production.service';
 
 @Controller('production')
@@ -8,30 +8,39 @@ export class ProductionController {
     @Post('batches')
     createBatch(
         @Query('tenantId') tenantId: string,
-        @Body() body: { plantId: string; quantity: number }
+        @Body() body: any
     ) {
-        return this.productionService.createBatch(tenantId, body.plantId, body.quantity);
+        return this.productionService.createBatch(tenantId, body);
     }
 
     @Get('batches')
     findAll(@Query('tenantId') tenantId: string) {
-        return this.productionService.findAllBatches(tenantId);
+        return this.productionService.findAll(tenantId);
     }
 
-    @Get('batches/:idOrBarcode')
+    @Get('batches/:id')
     findOne(
         @Query('tenantId') tenantId: string,
-        @Param('idOrBarcode') idOrBarcode: string
+        @Param('id') id: string
     ) {
-        return this.productionService.getBatchDetails(tenantId, idOrBarcode);
+        return this.productionService.findOne(tenantId, id);
     }
 
-    @Post('batches/:id/logs')
-    addLog(
+    @Patch('batches/:id/stage')
+    updateStage(
         @Query('tenantId') tenantId: string,
-        @Param('id') batchId: string,
-        @Body() data: any
+        @Param('id') id: string,
+        @Body() body: { stage: string; recipeId?: string }
     ) {
-        return this.productionService.addGrowthLog(tenantId, batchId, data);
+        return this.productionService.updateStage(tenantId, id, body.stage, body.recipeId);
+    }
+
+    @Post('batches/:id/history')
+    addHistory(
+        @Query('tenantId') tenantId: string,
+        @Param('id') id: string,
+        @Body() body: { action: string; note?: string }
+    ) {
+        return this.productionService.addHistoryLog(tenantId, id, body);
     }
 }

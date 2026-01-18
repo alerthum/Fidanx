@@ -6,6 +6,7 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { PlantsModule } from './plants/plants.module';
 import { ProductionModule } from './production/production.module';
+import { RecipesModule } from './recipes/recipes.module';
 import { SalesModule } from './sales/sales.module';
 import { IntegrationModule } from './integration/integration.module';
 import { SeedController } from './seed/seed.controller';
@@ -17,6 +18,7 @@ import { SeedController } from './seed/seed.controller';
     TenantsModule,
     PlantsModule,
     ProductionModule,
+    RecipesModule,
     SalesModule,
     IntegrationModule,
   ],
