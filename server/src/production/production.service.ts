@@ -31,6 +31,7 @@ export class ProductionService {
         }
 
         const data = doc.data();
+        if (!data) throw new NotFoundException('Veri bulunamadı.');
         const history = data.history || [];
         history.push({ ...log, date: new Date() });
 
