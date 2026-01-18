@@ -5,11 +5,16 @@ import Sidebar from '@/components/Sidebar';
 export default function UretimPage() {
     const [batches, setBatches] = useState<any[]>([]);
     const [motherTrees, setMotherTrees] = useState<any[]>([]);
+    const [recipes, setRecipes] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedBatch, setSelectedBatch] = useState<any>(null);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [newBatch, setNewBatch] = useState({
         motherId: '',
         name: '',
         quantity: 0,
+        type: 'Çelikleme',
+        recipeId: '',
         startDate: new Date().toISOString().split('T')[0]
     });
 
@@ -18,7 +23,16 @@ export default function UretimPage() {
     useEffect(() => {
         fetchBatches();
         fetchMotherTrees();
+        fetchRecipes();
     }, []);
+
+    const fetchRecipes = async () => {
+        try {
+            const res = await fetch(`${API_URL}/recipes?tenantId=demo-tenant`);
+            const data = await res.json();
+            setRecipes(Array.isArray(data) ? data : []);
+        } catch (err) { }
+    };
 
     const fetchBatches = async () => {
         try {
@@ -46,7 +60,14 @@ export default function UretimPage() {
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setNewBatch({ motherId: '', name: '', quantity: 0, startDate: new Date().toISOString().split('T')[0] });
+                setNewBatch({
+                    motherId: '',
+                    name: '',
+                    quantity: 0,
+                    type: 'Çelikleme',
+                    recipeId: '',
+                    startDate: new Date().toISOString().split('T')[0]
+                });
                 fetchBatches();
             }
         } catch (err) {
@@ -80,7 +101,9 @@ export default function UretimPage() {
                         </div>
                         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                             <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Toplam Büyüyen Fide</h3>
-                            <p className="text-3xl font-bold text-emerald-600">8,420</p>
+                            <p className="text-3xl font-bold text-emerald-600">
+                                {batches.reduce((acc, b) => acc + (b.quantity || 0), 0).toLocaleString()}
+                            </p>
                         </div>
                         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                             <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Ana Ağaç Sayısı</h3>
@@ -93,11 +116,11 @@ export default function UretimPage() {
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
                                 <tr>
-                                    <th className="px-6 py-4">Parti Adı / Kaynak</th>
-                                    <th className="px-6 py-4">Miktar</th>
-                                    <th className="px-6 py-4">Başlangıç</th>
-                                    <th className="px-6 py-4">Durum</th>
-                                    <th className="px-6 py-4 text-right">Aksiyonlar</th>
+                                    <th className="px-6 py-4">Parti & Lot ID</th>
+                                    <th className="px-6 py-4">Miktar & Tip</th>
+                                    <th className="px-6 py-4">Uygulanan Reçete</th>
+                                    <th className="px-6 py-4">Gelişim Safhası</th>
+                                    <th className="px-6 py-4 text-right">İşlemler</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-sm">
@@ -105,32 +128,66 @@ export default function UretimPage() {
                                     <tr key={batch.id} className="hover:bg-slate-50 transition group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xl">
-                                                    {batch.type === 'Çelikleme' ? '✂️' : batch.type === 'Aşı' ? '🌿' : '🌱'}
-                                                </span>
+                                                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-xl shadow-sm border border-slate-200">
+                                                    {batch.stage === 'TEPSİ' ? '🛹' : batch.stage === 'KÜÇÜK_SAKSI' ? '🪴' : '🌲'}
+                                                </div>
                                                 <div>
                                                     <p className="font-bold text-slate-700 tracking-tight">{batch.name}</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                                                        Kaynak: {motherTrees.find(m => m.id === (batch.motherTreeId || batch.motherId))?.name || 'Bilinmeyen Ana Ağaç'}
+                                                    <p className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest">
+                                                        {batch.lotId || `LOT-${batch.id.substring(0, 6)}`.toUpperCase()}
+                                                    </p>
+                                                    <p className="text-[9px] text-emerald-600 font-black uppercase mt-0.5">
+                                                        {motherTrees.find(m => m.id === (batch.motherTreeId || batch.motherId))?.name || 'Ana Ağaç Bilgisi Bekleniyor...'}
                                                     </p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 font-semibold text-slate-600">
-                                            <p>{batch.quantity} Adet</p>
-                                            <p className="text-[10px] text-emerald-600 font-black uppercase">{batch.type || 'STANDART'}</p>
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-500 font-medium">
-                                            {batch.startDate ? new Date(batch.startDate).toLocaleDateString('tr-TR') : '-'}
+                                        <td className="px-6 py-4">
+                                            <p className="font-bold text-slate-700">{batch.quantity} Adet</p>
+                                            <p className="text-[10px] text-slate-400 font-black uppercase">{batch.type || 'Çelikleme'}</p>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${batch.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100'
-                                                }`}>
-                                                {batch.status === 'GROWING' ? 'Büyüme Sürecinde' : batch.status === 'COMPLETED' ? 'Tamamlandı' : 'Beklemede'}
-                                            </span>
+                                            <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg border border-amber-100 hover:bg-amber-100 transition cursor-help group relative">
+                                                <span className="text-[10px] font-black uppercase tracking-tight">
+                                                    {recipes.find(r => r.id === batch.recipeId)?.name || 'Reçete Seçilmedi'}
+                                                </span>
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 bg-slate-900 text-white p-3 rounded-xl text-[10px] shadow-2xl z-50">
+                                                    <p className="font-black uppercase mb-1 border-b border-slate-700 pb-1">Uygulanan Karışım</p>
+                                                    <p className="text-slate-400 leading-relaxed font-medium">
+                                                        {recipes.find(r => r.id === batch.recipeId)?.ingredients?.join(', ') || 'İçerik bilgisi girilmemiş.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <span className={`w-fit px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${batch.stage === 'TEPSİ' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                        batch.stage === 'KÜÇÜK_SAKSI' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                                                            'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                    }`}>
+                                                    {batch.stage?.replace('_', ' ') || 'SAFHA BELİRSİZ'}
+                                                </span>
+                                                <p className="text-[9px] text-slate-400 font-medium">
+                                                    {batch.startDate ? new Date(batch.startDate).toLocaleDateString('tr-TR') : '-'} GİRİŞ
+                                                </p>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="text-slate-300 hover:text-emerald-600 font-black text-[10px] uppercase tracking-widest transition-colors">GÖRÜNTÜLE</button>
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => { setSelectedBatch(batch); setIsHistoryOpen(true); }}
+                                                    className="bg-white border border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-200 p-2 rounded-lg transition-all shadow-sm active:scale-90"
+                                                    title="Şecere / Geçmiş"
+                                                >
+                                                    📄
+                                                </button>
+                                                <button
+                                                    className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-md transition active:scale-95"
+                                                    title="Saksı Değiştir"
+                                                >
+                                                    ŞAŞIRTMA
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -149,13 +206,60 @@ export default function UretimPage() {
                     </div>
                 </div>
 
+                {/* History / Traceability Modal */}
+                {isHistoryOpen && selectedBatch && (
+                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
+                            <div className="bg-slate-50 px-8 py-6 border-b border-slate-200 flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 tracking-tight">{selectedBatch.name} Şeceresi</h3>
+                                    <p className="text-xs text-slate-400 font-black uppercase tracking-widest mt-1">Sistem Takip No: {selectedBatch.lotId}</p>
+                                </div>
+                                <button onClick={() => setIsHistoryOpen(false)} className="text-slate-400 hover:text-slate-600 text-3xl font-light">×</button>
+                            </div>
+                            <div className="p-8 max-h-[60vh] overflow-y-auto space-y-8">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+                                        <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Kaynak Ana Ağaç</p>
+                                        <p className="font-bold text-slate-800">{motherTrees.find(m => m.id === (selectedBatch.motherTreeId || selectedBatch.motherId))?.name || 'Bilinmiyor'}</p>
+                                    </div>
+                                    <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100">
+                                        <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Uygulanan Reçete</p>
+                                        <p className="font-bold text-slate-800">{recipes.find(r => r.id === selectedBatch.recipeId)?.name || 'Standart Bakım'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Zaman Tüneli (Lifecycle Logs)</p>
+                                    <div className="border-l-2 border-slate-100 ml-4 space-y-6">
+                                        {(selectedBatch.history || []).map((h: any, i: number) => (
+                                            <div key={i} className="relative pl-8">
+                                                <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-white border-4 border-emerald-500 shadow-sm"></div>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                                    {new Date(h.date).toLocaleDateString('tr-TR')} {new Date(h.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                                <p className="text-sm font-bold text-slate-700">{h.action}</p>
+                                                {h.note && <p className="text-xs text-slate-500 mt-1 italic">"{h.note}"</p>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-6 bg-slate-50 border-t border-slate-200 text-right">
+                                <button onClick={() => setIsHistoryOpen(false)} className="bg-slate-800 text-white px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition active:scale-95">Kapat</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Create Batch Modal */}
                 {isModalOpen && (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8">
                             <h3 className="text-xl font-bold text-slate-800 mb-6 tracking-tight">Üretim Başlat (Dikim)</h3>
                             <form onSubmit={handleAddBatch} className="space-y-5">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Kaynak Ana Ağaç / Tür</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Kaynak Ana Ağaç</label>
                                     <select
                                         required
                                         value={newBatch.motherId}
@@ -167,6 +271,35 @@ export default function UretimPage() {
                                             <option key={m.id} value={m.id}>{m.name} ({m.sku})</option>
                                         ))}
                                     </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Uygulanacak Reçete</label>
+                                        <select
+                                            required
+                                            value={newBatch.recipeId}
+                                            onChange={(e) => setNewBatch({ ...newBatch, recipeId: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm"
+                                        >
+                                            <option value="">Seçiniz...</option>
+                                            {recipes.map(r => (
+                                                <option key={r.id} value={r.id}>{r.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Üretim Tipi</label>
+                                        <select
+                                            required
+                                            value={newBatch.type}
+                                            onChange={(e) => setNewBatch({ ...newBatch, type: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm"
+                                        >
+                                            <option value="Çelikleme">✂️ Çelikleme</option>
+                                            <option value="Aşı">🌿 Aşılama</option>
+                                            <option value="Tohum">🌱 Tohumdan</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Parti / Blok Adı</label>
