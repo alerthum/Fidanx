@@ -34,7 +34,7 @@ export default function StoklarPage() {
 
     const [error, setError] = useState<string | null>(null);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
 
     useEffect(() => {
         fetchPlants();

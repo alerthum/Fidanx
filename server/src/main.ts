@@ -5,6 +5,9 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Global Prefix - Vercel ve standart uyumluluk için
+  app.setGlobalPrefix('api');
+
   // CORS'u tüm domainler için etkinleştir
   app.enableCors({
     origin: true,
