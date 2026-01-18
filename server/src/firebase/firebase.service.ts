@@ -6,26 +6,53 @@ export class FirebaseService implements OnModuleInit {
     private _db: any;
     private readonly logger = new Logger(FirebaseService.name);
 
-    onModuleInit() {
-        // DECISIVE FIX: Check if we have explicit credentials or skip to mock immediately
-        const hasCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIREBASE_CONFIG;
+    constructor() {
+        // İlk başta her zaman MOCK ile başla (fail-safe)
+        this.initializeMock();
+    }
 
-        if (!hasCredentials) {
-            this.logger.warn('GOOGLE_APPLICATION_CREDENTIALS missing. Switching to MOCK mode to prevent crashes.');
-            this.initializeMock();
+    onModuleInit() {
+        const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        const credJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+        if (!credPath && !credJson) {
+            this.logger.warn('Firebase kimlik bilgileri bulunamadı. MOCK modunda devam ediliyor.');
             return;
         }
 
         try {
             if (admin.apps.length === 0) {
-                admin.initializeApp({
-                    credential: admin.credential.applicationDefault(),
-                });
+                let credential;
+
+                if (credJson) {
+                    // JSON string üzerinden (Vercel/Cloud için ideal)
+                    try {
+                        const serviceAccount = JSON.parse(credJson);
+                        credential = admin.credential.cert(serviceAccount);
+                        this.logger.log('Firebase initialized using direct JSON content.');
+                    } catch (e) {
+                        this.logger.error('FIREBASE_SERVICE_ACCOUNT JSON ayrıştırma hatası:', e.message);
+                    }
+                }
+
+                if (!credential && credPath) {
+                    // Dosya yolu üzerinden
+                    credential = admin.credential.applicationDefault();
+                    this.logger.log(`Firebase initialized using credentials file: ${credPath}`);
+                }
+
+                if (credential) {
+                    admin.initializeApp({ credential });
+                    this._db = admin.firestore();
+                    this.logger.log('Firebase Firestore bağlantısı başarıyla kuruldu.');
+                }
+            } else {
+                this._db = admin.firestore();
             }
-            this._db = admin.firestore();
-            this.logger.log('Firebase initialized successfully with real credentials.');
         } catch (error) {
-            this.logger.error('Firebase initialization failed. Falling back to MOCK.', error.stack);
+            this.logger.error('Firebase başlatma hatası (MOCK moduna dönülüyor):', error.message);
+            // Zaten constructor'da mocklandığı için bir şey yapmaya gerek yok, 
+            // ama yine de temiz olduğundan emin olalım.
             this.initializeMock();
         }
     }
