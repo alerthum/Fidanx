@@ -34,6 +34,8 @@ export default function StoklarPage() {
 
     const [error, setError] = useState<string | null>(null);
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
     useEffect(() => {
         fetchPlants();
     }, []);
@@ -42,7 +44,7 @@ export default function StoklarPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetch(`http://localhost:3001/plants?tenantId=demo-tenant`);
+            const res = await fetch(`${API_URL}/plants?tenantId=demo-tenant`);
             if (!res.ok) {
                 const errText = await res.text();
                 throw new Error(errText || 'Sunucu hatası');
@@ -61,7 +63,7 @@ export default function StoklarPage() {
     const handleAddPlant = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch(`http://localhost:3001/plants?tenantId=demo-tenant`, {
+            const res = await fetch(`${API_URL}/plants?tenantId=demo-tenant`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPlant),

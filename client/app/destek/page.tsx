@@ -10,6 +10,8 @@ export default function DestekPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTicket, setNewTicket] = useState({ customer: '', subject: '', content: '', status: 'Açık' });
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
     const handleAddTicket = (e: React.FormEvent) => {
         e.preventDefault();
         const ticket = {
@@ -74,8 +76,8 @@ export default function DestekPage() {
                                                 <button
                                                     onClick={() => toggleStatus(ticket.id)}
                                                     className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter transition-colors ${ticket.status === 'Açık'
-                                                            ? 'bg-amber-50 text-amber-600 border border-amber-100'
-                                                            : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                        ? 'bg-amber-50 text-amber-600 border border-amber-100'
+                                                        : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                                                         }`}
                                                 >
                                                     {ticket.status}

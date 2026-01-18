@@ -13,6 +13,8 @@ export default function UretimPage() {
         startDate: new Date().toISOString().split('T')[0]
     });
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
     useEffect(() => {
         fetchBatches();
         fetchMotherTrees();
@@ -20,24 +22,24 @@ export default function UretimPage() {
 
     const fetchBatches = async () => {
         try {
-            const res = await fetch('http://localhost:3001/production?tenantId=demo-tenant');
+            const res = await fetch(`${API_URL}/production?tenantId=demo-tenant`);
             const data = await res.json();
-            setBatches(data);
+            setBatches(Array.isArray(data) ? data : []);
         } catch (err) { }
     };
 
     const fetchMotherTrees = async () => {
         try {
-            const res = await fetch('http://localhost:3001/plants?tenantId=demo-tenant');
+            const res = await fetch(`${API_URL}/plants?tenantId=demo-tenant`);
             const data = await res.json();
-            setMotherTrees(data.filter((p: any) => p.type === 'MOTHER_TREE'));
+            setMotherTrees(Array.isArray(data) ? data.filter((p: any) => p.type === 'MOTHER_TREE') : []);
         } catch (err) { }
     };
 
     const handleAddBatch = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch('http://localhost:3001/production?tenantId=demo-tenant', {
+            const res = await fetch(`${API_URL}/production?tenantId=demo-tenant`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newBatch),

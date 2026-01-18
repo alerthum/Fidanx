@@ -12,13 +12,15 @@ export default function AyarlarPage() {
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [newUser, setNewUser] = useState({ name: '', email: '', role: 'Personel' });
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
     useEffect(() => {
         fetchSettings();
     }, []);
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch('http://localhost:3001/tenants/demo-tenant');
+            const res = await fetch(`${API_URL}/tenants/demo-tenant`);
             const data = await res.json();
             if (data.settings?.categories) setCategories(data.settings.categories);
             if (data.settings?.users) setUsers(data.settings.users);
@@ -39,11 +41,11 @@ export default function AyarlarPage() {
     const handleClearData = async () => {
         if (confirm('Tüm üretim ve stok verileri silinecektir. Emin misiniz?')) {
             try {
-                const res = await fetch('http://localhost:3001/seed/clear?tenantId=demo-tenant', { method: 'DELETE' });
+                const res = await fetch(`${API_URL}/seed/clear?tenantId=demo-tenant`, { method: 'DELETE' });
                 if (res.ok) alert('Sistem sıfırlandı.');
                 else alert('Sunucu hatası.');
             } catch (err) {
-                alert('Sunucuya bağlanılamadı (Port 3001).');
+                alert('Sunucuya bağlanılamadı.');
             }
         }
     };
@@ -51,7 +53,7 @@ export default function AyarlarPage() {
     const handleSaveSettings = async () => {
         setIsSaving(true);
         try {
-            const res = await fetch('http://localhost:3001/tenants/demo-tenant/settings', {
+            const res = await fetch(`${API_URL}/tenants/demo-tenant/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ categories, users }),
@@ -59,7 +61,7 @@ export default function AyarlarPage() {
             if (res.ok) alert('Ayarlar başarıyla kaydedildi ve veritabanına yazıldı.');
             else alert('Kaydetme başarısız: ' + await res.text());
         } catch (err) {
-            alert('Sunucu hatası.');
+            alert('Sunucuya bağlanılamadı.');
         } finally {
             setIsSaving(false);
         }

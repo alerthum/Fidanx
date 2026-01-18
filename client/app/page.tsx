@@ -6,15 +6,16 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   const loadDemo = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/seed?tenantId=demo-tenant', { method: 'POST' });
+      const res = await fetch(`${API_URL}/seed?tenantId=demo-tenant`, { method: 'POST' });
       if (res.ok) alert('Demo veriler başarıyla yüklendi!');
       else alert('Sunucu hatası: ' + await res.text());
     } catch (err) {
-      alert('Sunucuya bağlanılamadı. Lütfen sunucunun (port 3001) çalıştığından emin olun.');
+      alert('Sunucuya bağlanılamadı.');
     } finally {
       setIsLoading(false);
     }
@@ -156,7 +157,7 @@ function StatCard({ title, value, change, positive, neutral }: any) {
       <div className="flex justify-between items-end">
         <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{value}</h3>
         <span className={`text-[9px] font-black px-2 py-1.5 rounded-lg uppercase tracking-widest ${neutral ? 'bg-slate-100 text-slate-500' :
-            positive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
+          positive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
           }`}>
           {change}
         </span>
