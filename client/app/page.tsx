@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(false);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
   const loadDemo = async () => {
     setIsLoading(true);

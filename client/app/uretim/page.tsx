@@ -18,7 +18,7 @@ export default function UretimPage() {
         startDate: new Date().toISOString().split('T')[0]
     });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
     useEffect(() => {
         fetchBatches();

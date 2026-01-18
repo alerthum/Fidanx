@@ -13,7 +13,7 @@ export default function RecipesPage() {
         instructions: ''
     });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
     useEffect(() => {
         fetchRecipes();

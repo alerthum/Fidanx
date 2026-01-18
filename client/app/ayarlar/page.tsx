@@ -12,7 +12,7 @@ export default function AyarlarPage() {
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [newUser, setNewUser] = useState({ name: '', email: '', role: 'Personel' });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
     useEffect(() => {
         fetchSettings();
