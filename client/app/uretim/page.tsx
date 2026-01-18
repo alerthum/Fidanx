@@ -9,6 +9,12 @@ export default function UretimPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState<any>(null);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [isTransplantOpen, setIsTransplantOpen] = useState(false);
+    const [transplantData, setTransplantData] = useState({
+        nextStage: '',
+        recipeId: '',
+        note: ''
+    });
     const [newBatch, setNewBatch] = useState({
         motherId: '',
         name: '',
@@ -101,6 +107,33 @@ export default function UretimPage() {
         } catch (err) {
             alert('Sunucu hatası.');
         }
+    };
+
+    const handleTransplant = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedBatch) return;
+        try {
+            const res = await fetch(`${API_URL}/production/batches/${selectedBatch.id}/stage?tenantId=demo-tenant`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    stage: transplantData.nextStage,
+                    recipeId: transplantData.recipeId
+                }),
+            });
+            if (res.ok) {
+                setIsTransplantOpen(false);
+                fetchBatches();
+            }
+        } catch (err) {
+            alert('Güncelleme hatası.');
+        }
+    };
+
+    const getNextStage = (current: string) => {
+        const stages = ['TEPSİ', 'KÜÇÜK_SAKSI', 'BÜYÜK_SAKSI', 'SATIŞA_HAZIR'];
+        const idx = stages.indexOf(current);
+        return idx < stages.length - 1 ? stages[idx + 1] : current;
     };
 
     return (
@@ -210,6 +243,15 @@ export default function UretimPage() {
                                                     📄
                                                 </button>
                                                 <button
+                                                    onClick={() => {
+                                                        setSelectedBatch(batch);
+                                                        setTransplantData({
+                                                            nextStage: getNextStage(batch.stage),
+                                                            recipeId: batch.recipeId,
+                                                            note: ''
+                                                        });
+                                                        setIsTransplantOpen(true);
+                                                    }}
                                                     className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-md transition active:scale-95"
                                                     title="Saksı Değiştir"
                                                 >
@@ -269,7 +311,18 @@ export default function UretimPage() {
                                         >
                                             📄
                                         </button>
-                                        <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition active:scale-95">
+                                        <button
+                                            onClick={() => {
+                                                setSelectedBatch(batch);
+                                                setTransplantData({
+                                                    nextStage: getNextStage(batch.stage),
+                                                    recipeId: batch.recipeId,
+                                                    note: ''
+                                                });
+                                                setIsTransplantOpen(true);
+                                            }}
+                                            className="flex-1 bg-emerald-600 text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-100"
+                                        >
                                             ŞAŞIRTMA
                                         </button>
                                     </div>
@@ -423,6 +476,66 @@ export default function UretimPage() {
                                         className="w-full sm:flex-1 bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition active:scale-95"
                                     >
                                         Üretimi Başlat
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Transplant (Stage Change) Modal */}
+                {isTransplantOpen && (
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg p-6 sm:p-8 max-h-[95vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-slate-800 tracking-tight">Şaşırtma / Safha Değişimi</h3>
+                                <button onClick={() => setIsTransplantOpen(false)} className="text-slate-400 text-2xl">×</button>
+                            </div>
+                            <p className="text-xs text-slate-500 mb-6 font-medium bg-slate-50 p-3 rounded-xl border border-slate-100 italic">
+                                "{selectedBatch?.name}" partisini bir sonraki gelişim aşamasına taşıyorsunuz.
+                            </p>
+                            <form onSubmit={handleTransplant} className="space-y-5">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Yeni Gelişim Safhası</label>
+                                    <select
+                                        required
+                                        value={transplantData.nextStage}
+                                        onChange={(e) => setTransplantData({ ...transplantData, nextStage: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm bg-slate-50/50"
+                                    >
+                                        <option value="TEPSİ">🛹 TEPSİ (İlk Dikim)</option>
+                                        <option value="KÜÇÜK_SAKSI">🪴 KÜÇÜK SAKSI (1. Şaşırtma)</option>
+                                        <option value="BÜYÜK_SAKSI">🎍 BÜYÜK SAKSI (2. Şaşırtma)</option>
+                                        <option value="SATIŞA_HAZIR">🌲 SATIŞA HAZIR</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Uygulanacak Yeni Reçete (Opsiyonel)</label>
+                                    <select
+                                        value={transplantData.recipeId}
+                                        onChange={(e) => setTransplantData({ ...transplantData, recipeId: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm bg-slate-50/50"
+                                    >
+                                        <option value="">Aynı Reçeteye Devam...</option>
+                                        {recipes.map(r => (
+                                            <option key={r.id} value={r.id}>{r.name}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[10px] text-slate-400 mt-1 font-medium italic">Eğer toprak/gübre karışımı değişmiyorsa boş bırakabilirsiniz.</p>
+                                </div>
+                                <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsTransplantOpen(false)}
+                                        className="w-full sm:flex-1 bg-slate-100 text-slate-600 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition"
+                                    >
+                                        İptal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="w-full sm:flex-1 bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition active:scale-95"
+                                    >
+                                        Safha Değiştir
                                     </button>
                                 </div>
                             </form>
