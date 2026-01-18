@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 
 @Injectable()
@@ -18,14 +18,43 @@ export class ProductionService {
             startDate: data.startDate || new Date(),
             history: data.history || [{ date: new Date(), action: 'Üretim Başlatıldı' }]
         };
-        const docRef = await this.production(tenantId).add(finalData);
-
-        // MRP: Reçete varsa stoktan düş
+        // MRP: Reçete varsa önce stok kontrolü yap sonra düş
         if (data.recipeId && data.quantity) {
+            await this.checkStockAvailability(tenantId, data.recipeId, data.quantity);
+            const docRef = await this.production(tenantId).add(finalData);
             await this.deductMaterials(tenantId, data.recipeId, data.quantity);
+            return { id: docRef.id, ...finalData };
         }
 
+        const docRef = await this.production(tenantId).add(finalData);
         return { id: docRef.id, ...finalData };
+    }
+
+    private async checkStockAvailability(tenantId: string, recipeId: string, quantity: number) {
+        const recipeDoc = await this.firebase.db.collection('tenants').doc(tenantId).collection('recipes').doc(recipeId).get();
+        if (!recipeDoc.exists) return;
+
+        const recipe = recipeDoc.data();
+        if (!recipe || !recipe.items || !Array.isArray(recipe.items)) return;
+
+        for (const item of recipe.items) {
+            if (item.materialId && item.amount) {
+                const materialRef = this.firebase.db.collection('tenants').doc(tenantId).collection('plants').doc(item.materialId);
+                const materialDoc = await materialRef.get();
+
+                if (materialDoc.exists) {
+                    const matData = materialDoc.data();
+                    const currentStock = matData?.currentStock || 0;
+                    const required = item.amount * quantity;
+
+                    if (currentStock < required) {
+                        throw new BadRequestException(`${matData?.name || 'Malzeme'} yetersiz. Gerekli: ${required}, Mevcut: ${currentStock}`);
+                    }
+                } else {
+                    throw new BadRequestException('Reçetedeki malzeme stokta bulunamadı.');
+                }
+            }
+        }
     }
 
     private async deductMaterials(tenantId: string, recipeId: string, quantity: number) {
@@ -125,11 +154,13 @@ export class ProductionService {
         const updateData: any = { stage };
         if (recipeId) updateData.recipeId = recipeId;
 
-        await docRef.update(updateData);
-
-        // MRP: Reçete değiştiyse veya yeni reçete uygulandıysa stoktan düş
+        // MRP: Reçete değiştiyse veya yeni reçete uygulandıysa önce kontrol et sonra stoktan düş
         if (recipeId && batchData?.quantity) {
+            await this.checkStockAvailability(tenantId, recipeId, batchData.quantity);
+            await docRef.update(updateData);
             await this.deductMaterials(tenantId, recipeId, batchData.quantity);
+        } else {
+            await docRef.update(updateData);
         }
 
         await this.addHistoryLog(tenantId, id, {

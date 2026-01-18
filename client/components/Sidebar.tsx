@@ -15,7 +15,7 @@ export default function Sidebar() {
         { name: 'Satınalma & MRP', path: '/satinalma', icon: '🛒' },
         { name: 'Satış & CRM', path: '/satislar', icon: '💰' },
         { name: 'Finans & Giderler', path: '/finans', icon: '💎' },
-        { name: 'Analizler', path: '/analizler', icon: '📈' },
+        { name: 'Maliyet Analizi', path: '/analizler/maliyetler', icon: '📈' },
         { name: 'Ayarlar', path: '/ayarlar', icon: '⚙️' },
     ];
 
