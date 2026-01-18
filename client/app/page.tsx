@@ -22,25 +22,25 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc]">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8fafc]">
       <Sidebar />
       <main className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-30 shadow-xs">
+        <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center sticky top-0 lg:top-0 z-30 shadow-xs gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Fidanx Kontrol Paneli</h1>
-            <p className="text-sm text-slate-500">İşletmenizin genel durumu ve üretim verileri.</p>
+            <h1 className="text-xl lg:text-2xl font-bold text-slate-800">Fidanx Kontrol Paneli</h1>
+            <p className="text-xs lg:text-sm text-slate-500">İşletmenizin genel durumu ve üretim verileri.</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 lg:gap-3 w-full sm:w-auto">
             <button
               onClick={loadDemo}
               disabled={isLoading}
-              className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition active:scale-95 disabled:opacity-50"
+              className="flex-1 sm:flex-none bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition active:scale-95 disabled:opacity-50"
             >
-              {isLoading ? 'Yükleniyor...' : '⚡ Demo Veri Yükle'}
+              {isLoading ? 'Yükleniyor...' : '⚡ Demo Veri'}
             </button>
-            <Link href="/stoklar" className="bg-emerald-600 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-md hover:bg-emerald-700 transition active:scale-95">
-              + Yeni Stok/Ağaç Ekle
+            <Link href="/stoklar" className="flex-1 sm:flex-none bg-emerald-600 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-md hover:bg-emerald-700 transition active:scale-95 text-center whitespace-nowrap">
+              + Yeni Stok
             </Link>
           </div>
         </header>

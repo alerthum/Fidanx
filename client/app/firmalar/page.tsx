@@ -49,17 +49,17 @@ export default function FirmalarPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-slate-50">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-30">
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center sticky top-0 lg:top-0 z-30 gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Firma Yönetimi</h1>
-                        <p className="text-sm text-slate-500">Müşteri ve tedarikçi profillerini yönetin.</p>
+                        <h1 className="text-xl lg:text-2xl font-bold text-slate-800">Firma Yönetimi</h1>
+                        <p className="text-xs lg:text-sm text-slate-500">Müşteri ve tedarikçi profillerini yönetin.</p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 shadow-md transition"
+                        className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition active:scale-95"
                     >
                         + Yeni Firma Kaydı
                     </button>

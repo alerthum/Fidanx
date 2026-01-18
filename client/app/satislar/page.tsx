@@ -6,15 +6,15 @@ export default function SatislarPage() {
     const [cart, setCart] = useState<{ id: string; name: string; qty: number; price: number }[]>([]);
 
     return (
-        <>
+        <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50">
             <Sidebar />
-            <main className="flex-1 bg-slate-50 min-h-screen">
-                <header className="bg-white border-b border-slate-200 p-6 sticky top-0 z-10 flex justify-between items-center">
+            <main className="flex-1 min-w-0">
+                <header className="bg-white border-b border-slate-200 p-4 lg:p-6 lg:sticky lg:top-0 z-30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Yeni Satış</h1>
-                        <p className="text-sm text-slate-500">Müşteri seçin ve fidanları sepete ekleyin.</p>
+                        <h1 className="text-xl lg:text-2xl font-bold text-slate-900">Yeni Satış</h1>
+                        <p className="text-xs lg:text-sm text-slate-500">Müşteri seçin ve fidanları sepete ekleyin.</p>
                     </div>
-                    <button className="text-sm font-semibold text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl transition">İptal Et</button>
+                    <button className="text-sm font-semibold text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl transition w-full sm:w-auto text-left sm:text-center">İptal Et</button>
                 </header>
 
                 <div className="max-w-4xl mx-auto p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-32">
@@ -92,6 +92,6 @@ export default function SatislarPage() {
                     </div>
                 </div>
             </main>
-        </>
+        </div>
     );
 }

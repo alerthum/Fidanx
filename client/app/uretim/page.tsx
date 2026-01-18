@@ -104,43 +104,43 @@ export default function UretimPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-slate-50 font-sans">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50 font-sans">
             <Sidebar />
-            <main className="flex-1 flex flex-col">
-                <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-30">
+            <main className="flex-1 flex flex-col min-w-0">
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center lg:sticky lg:top-0 z-30 gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Üretim Takibi</h1>
-                        <p className="text-sm text-slate-500">Ana ağaçlardan alınan dalların büyüme ve takip süreci.</p>
+                        <h1 className="text-xl lg:text-2xl font-bold text-slate-800">Üretim Takibi</h1>
+                        <p className="text-xs lg:text-sm text-slate-500">Ana ağaçlardan alınan dalların büyüme süreci.</p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700 shadow-md transition"
+                        className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition active:scale-95"
                     >
-                        + Yeni Üretim Partisi (Dikim)
+                        + Yeni Üretim Başlat
                     </button>
                 </header>
 
-                <div className="p-8 space-y-8">
+                <div className="p-4 lg:p-8 space-y-6 lg:space-y-8">
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Aktif Partiler</h3>
-                            <p className="text-3xl font-bold text-slate-800">{batches.length}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                        <div className="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Aktif Partiler</h3>
+                            <p className="text-2xl lg:text-3xl font-bold text-slate-800">{batches.length}</p>
                         </div>
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Toplam Büyüyen Fide</h3>
-                            <p className="text-3xl font-bold text-emerald-600">
+                        <div className="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Toplam Büyüyen</h3>
+                            <p className="text-2xl lg:text-3xl font-bold text-emerald-600">
                                 {batches.reduce((acc, b) => acc + (b.quantity || 0), 0).toLocaleString()}
                             </p>
                         </div>
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Ana Ağaç Sayısı</h3>
-                            <p className="text-3xl font-bold text-slate-800">{motherTrees.length}</p>
+                        <div className="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200 shadow-sm sm:col-span-2 lg:col-span-1">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Ana Ağaç Hattı</h3>
+                            <p className="text-2xl lg:text-3xl font-bold text-slate-800">{motherTrees.length}</p>
                         </div>
                     </div>
 
-                    {/* Table */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    {/* Production List - Desktop Table */}
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hidden lg:block">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
                                 <tr>
@@ -219,41 +219,95 @@ export default function UretimPage() {
                                         </td>
                                     </tr>
                                 ))}
-                                {(!Array.isArray(batches) || (batches.length === 0)) && (
-                                    <tr>
-                                        <td colSpan={5} className="py-24 text-center">
-                                            <div className="text-4xl mb-4">🚜</div>
-                                            <p className="text-slate-400 font-medium italic">
-                                                {!Array.isArray(batches) ? 'Üretim verileri alınamadı.' : 'Henüz bir üretim partisi kaydı bulunmuyor.'}
-                                            </p>
-                                        </td>
-                                    </tr>
-                                )}
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Mobile Card List */}
+                    <div className="lg:hidden space-y-4">
+                        {Array.isArray(batches) && batches.map((batch) => (
+                            <div key={batch.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl border border-slate-100 shadow-inner">
+                                            {batch.stage === 'TEPSİ' ? '🛹' : batch.stage === 'KÜÇÜK_SAKSI' ? '🪴' : '🌲'}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-800 tracking-tight text-sm">{batch.name}</h4>
+                                            <p className="text-[9px] text-slate-400 font-mono font-bold uppercase tracking-widest">
+                                                {batch.lotId || `LOT-${batch.id.substring(0, 6)}`.toUpperCase()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border ${batch.stage === 'TEPSİ' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                        batch.stage === 'KÜÇÜK_SAKSI' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                                            'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                        }`}>
+                                        {batch.stage?.replace('_', ' ') || 'SAFHA BELİRSİZ'}
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-50">
+                                    <div className="space-y-1">
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Kaynak</p>
+                                        <p className="text-[10px] font-bold text-emerald-600 truncate">
+                                            {motherTrees.find(m => m.id === (batch.motherTreeId || batch.motherId))?.name || 'Ana Ağaç Bekleniyor'}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Miktar / Tip</p>
+                                        <p className="text-[10px] font-bold text-slate-700">{batch.quantity} | {batch.type}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-between items-center pt-2">
+                                    <p className="text-[9px] text-slate-400 font-medium">Giriş: {formatDate(batch.startDate, false)}</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => { setSelectedBatch(batch); setIsHistoryOpen(true); }}
+                                            className="bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm active:scale-90"
+                                        >
+                                            📄
+                                        </button>
+                                        <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition active:scale-95">
+                                            ŞAŞIRTMA
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {(!Array.isArray(batches) || (batches.length === 0)) && (
+                        <div className="py-24 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
+                            <div className="text-4xl mb-4">🚜</div>
+                            <p className="text-slate-400 font-medium italic">
+                                {!Array.isArray(batches) ? 'Üretim verileri alınamadı.' : 'Henüz bir üretim partisi kaydı bulunmuyor.'}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* History / Traceability Modal */}
                 {isHistoryOpen && selectedBatch && (
-                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
-                            <div className="bg-slate-50 px-8 py-6 border-b border-slate-200 flex justify-between items-center">
+                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
+                            <div className="bg-slate-50 px-6 sm:px-8 py-5 border-b border-slate-200 flex justify-between items-center">
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-800 tracking-tight">{selectedBatch.name} Şeceresi</h3>
-                                    <p className="text-xs text-slate-400 font-black uppercase tracking-widest mt-1">Sistem Takip No: {selectedBatch.lotId}</p>
+                                    <h3 className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">{selectedBatch.name} Şeceresi</h3>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">LOT: {selectedBatch.lotId}</p>
                                 </div>
                                 <button onClick={() => setIsHistoryOpen(false)} className="text-slate-400 hover:text-slate-600 text-3xl font-light">×</button>
                             </div>
-                            <div className="p-8 max-h-[60vh] overflow-y-auto space-y-8">
-                                <div className="grid grid-cols-2 gap-6">
+                            <div className="p-6 sm:p-8 overflow-y-auto space-y-6 sm:space-y-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
                                         <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Kaynak Ana Ağaç</p>
-                                        <p className="font-bold text-slate-800">{motherTrees.find(m => m.id === (selectedBatch.motherTreeId || selectedBatch.motherId))?.name || 'Bilinmiyor'}</p>
+                                        <p className="text-sm font-bold text-slate-800 truncate">{motherTrees.find(m => m.id === (selectedBatch.motherTreeId || selectedBatch.motherId))?.name || 'Bilinmiyor'}</p>
                                     </div>
                                     <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100">
                                         <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Uygulanan Reçete</p>
-                                        <p className="font-bold text-slate-800">{recipes.find(r => r.id === selectedBatch.recipeId)?.name || 'Standart Bakım'}</p>
+                                        <p className="text-sm font-bold text-slate-800 truncate">{recipes.find(r => r.id === selectedBatch.recipeId)?.name || 'Standart Bakım'}</p>
                                     </div>
                                 </div>
 
@@ -267,14 +321,14 @@ export default function UretimPage() {
                                                     {formatDate(h.date)}
                                                 </p>
                                                 <p className="text-sm font-bold text-slate-700">{h.action}</p>
-                                                {h.note && <p className="text-xs text-slate-500 mt-1 italic">"{h.note}"</p>}
+                                                {h.note && <p className="text-xs text-slate-500 mt-1 italic leading-relaxed">"{h.note}"</p>}
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-6 bg-slate-50 border-t border-slate-200 text-right">
-                                <button onClick={() => setIsHistoryOpen(false)} className="bg-slate-800 text-white px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition active:scale-95">Kapat</button>
+                            <div className="p-5 bg-slate-50 border-t border-slate-200 text-right">
+                                <button onClick={() => setIsHistoryOpen(false)} className="w-full sm:w-auto bg-slate-800 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition active:scale-95">Kapat</button>
                             </div>
                         </div>
                     </div>
@@ -282,9 +336,12 @@ export default function UretimPage() {
 
                 {/* Create Batch Modal */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8">
-                            <h3 className="text-xl font-bold text-slate-800 mb-6 tracking-tight">Üretim Başlat (Dikim)</h3>
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg p-6 sm:p-8 max-h-[95vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-slate-800 tracking-tight">Üretim Başlat (Dikim)</h3>
+                                <button onClick={() => setIsModalOpen(false)} className="sm:hidden text-slate-400 text-2xl">×</button>
+                            </div>
                             <form onSubmit={handleAddBatch} className="space-y-5">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Kaynak Ana Ağaç</label>
@@ -292,7 +349,7 @@ export default function UretimPage() {
                                         required
                                         value={newBatch.motherId}
                                         onChange={(e) => setNewBatch({ ...newBatch, motherId: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm"
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm bg-slate-50/50"
                                     >
                                         <option value="">Seçiniz...</option>
                                         {motherTrees.map(m => (
@@ -300,14 +357,14 @@ export default function UretimPage() {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Uygulanacak Reçete</label>
                                         <select
                                             required
                                             value={newBatch.recipeId}
                                             onChange={(e) => setNewBatch({ ...newBatch, recipeId: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm bg-slate-50/50"
                                         >
                                             <option value="">Seçiniz...</option>
                                             {recipes.map(r => (
@@ -321,7 +378,7 @@ export default function UretimPage() {
                                             required
                                             value={newBatch.type}
                                             onChange={(e) => setNewBatch({ ...newBatch, type: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm bg-slate-50/50"
                                         >
                                             <option value="Çelikleme">✂️ Çelikleme</option>
                                             <option value="Aşı">🌿 Aşılama</option>
@@ -329,52 +386,43 @@ export default function UretimPage() {
                                         </select>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Parti / Blok Adı</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        placeholder="Örn: 2024-AYVALIK-BLOK-A"
-                                        value={newBatch.name}
-                                        onChange={(e) => setNewBatch({ ...newBatch, name: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Adet / Miktar</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Parti Adı</label>
                                         <input
+                                            type="text"
                                             required
+                                            placeholder="Örn: Ayvalık Zeytin 2024"
+                                            value={newBatch.name}
+                                            onChange={(e) => setNewBatch({ ...newBatch, name: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm bg-slate-50/50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Miktar (Adet)</label>
+                                        <input
                                             type="number"
+                                            required
+                                            min="1"
                                             value={newBatch.quantity}
                                             onChange={(e) => setNewBatch({ ...newBatch, quantity: parseInt(e.target.value) })}
-                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Dikim Tarihi</label>
-                                        <input
-                                            required
-                                            type="date"
-                                            value={newBatch.startDate}
-                                            onChange={(e) => setNewBatch({ ...newBatch, startDate: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm bg-slate-50/50"
                                         />
                                     </div>
                                 </div>
-                                <div className="flex gap-4 pt-4">
+                                <div className="pt-4 flex flex-col sm:flex-row gap-3">
                                     <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}
-                                        className="flex-1 px-4 py-3 rounded-lg font-bold text-slate-500 hover:bg-slate-50 transition"
+                                        className="w-full sm:flex-1 bg-slate-100 text-slate-600 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition"
                                     >
                                         İptal
                                     </button>
                                     <button
                                         type="submit"
-                                        className="flex-1 bg-emerald-600 text-white px-4 py-3 rounded-lg font-bold shadow-lg hover:bg-emerald-700 active:scale-95 transition"
+                                        className="w-full sm:flex-1 bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition active:scale-95"
                                     >
-                                        Üretimi Kaydet
+                                        Üretimi Başlat
                                     </button>
                                 </div>
                             </form>

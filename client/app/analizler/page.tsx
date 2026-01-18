@@ -4,12 +4,12 @@ import Sidebar from '@/components/Sidebar';
 
 export default function AnalizlerPage() {
     return (
-        <div className="flex min-h-screen bg-slate-50">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="bg-white border-b border-slate-200 px-8 py-4 sticky top-0 z-30">
-                    <h1 className="text-2xl font-bold text-slate-800">Üretim & Verim Analizleri</h1>
-                    <p className="text-sm text-slate-500">Ana ağaç verimi ve fide büyüme istatistikleri.</p>
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 sticky lg:sticky lg:top-0 z-30">
+                    <h1 className="text-xl lg:text-2xl font-bold text-slate-800">Üretim & Verim Analizleri</h1>
+                    <p className="text-xs lg:text-sm text-slate-500">Ana ağaç verimi ve fide büyüme istatistikleri.</p>
                 </header>
 
                 <div className="p-8 space-y-8">
