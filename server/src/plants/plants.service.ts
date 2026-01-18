@@ -23,6 +23,8 @@ export class PlantsService {
         volume?: string; // Hacim (Litre vb.)
         dimensions?: string; // Ölçüler (Çap x Yükseklik vb.)
         currentStock?: number; // Mevcut stok miktarı
+        wholesalePrice?: number; // Toptan Fiyat
+        retailPrice?: number; // Perakende Fiyat
     }) {
         const docRef = await this.plants(tenantId).add({
             ...data,

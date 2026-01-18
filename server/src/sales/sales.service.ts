@@ -13,6 +13,14 @@ export class SalesService {
         return this.firebase.db.collection('tenants').doc(tenantId).collection('sales');
     }
 
+    private customers(tenantId: string) {
+        return this.firebase.db.collection('tenants').doc(tenantId).collection('customers');
+    }
+
+    private orders(tenantId: string) {
+        return this.firebase.db.collection('tenants').doc(tenantId).collection('orders');
+    }
+
     async createInvoice(tenantId: string, data: { customerId: string, totalAmount: number, invoiceNo: string }) {
         const saleData = {
             ...data,
@@ -29,7 +37,31 @@ export class SalesService {
     }
 
     async getCustomers(tenantId: string) {
-        const snapshot = await this.firebase.db.collection('tenants').doc(tenantId).collection('customers').get();
+        const snapshot = await this.customers(tenantId).get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+
+    async createCustomer(tenantId: string, data: any) {
+        const docRef = await this.customers(tenantId).add({ ...data, createdAt: new Date() });
+        return { id: docRef.id, ...data };
+    }
+
+    async getOrders(tenantId: string) {
+        const snapshot = await this.orders(tenantId).orderBy('orderDate', 'desc').get();
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            orderDate: doc.data().orderDate?.toDate ? doc.data().orderDate.toDate().toISOString() : doc.data().orderDate
+        }));
+    }
+
+    async createOrder(tenantId: string, data: any) {
+        const docRef = await this.orders(tenantId).add({
+            ...data,
+            orderDate: new Date(),
+            status: data.status || 'PENDING',
+            createdAt: new Date()
+        });
+        return { id: docRef.id, ...data };
     }
 }

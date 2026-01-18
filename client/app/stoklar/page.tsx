@@ -16,6 +16,8 @@ interface Plant {
     volume?: string;
     dimensions?: string;
     currentStock?: number;
+    wholesalePrice?: number;
+    retailPrice?: number;
     createdAt: string;
 }
 
@@ -35,7 +37,9 @@ export default function StoklarPage() {
         type: 'CUTTING',
         volume: '',
         dimensions: '',
-        currentStock: 0
+        currentStock: 0,
+        wholesalePrice: 0,
+        retailPrice: 0
     });
 
     const [error, setError] = useState<string | null>(null);
@@ -76,7 +80,7 @@ export default function StoklarPage() {
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0 });
+                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0, wholesalePrice: 0, retailPrice: 0 });
                 fetchPlants();
             }
         } catch (err) {
@@ -128,6 +132,7 @@ export default function StoklarPage() {
                                         <th className="px-6 py-4">Fidan Adı & Tip</th>
                                         <th className="px-6 py-4">Kategori / SKU</th>
                                         <th className="px-6 py-4 text-center">Mevcut Stok</th>
+                                        <th className="px-6 py-4 text-center">Birim Fiyat (W/R)</th>
                                         <th className="px-6 py-4 text-center">Kod 1-5 (Grup)</th>
                                         <th className="px-6 py-4 text-right">İşlemler</th>
                                     </tr>
@@ -267,6 +272,29 @@ export default function StoklarPage() {
                                         className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm shadow-sm transition"
                                         placeholder="0"
                                     />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Toptan Fiyat (₺)</label>
+                                        <input
+                                            type="number"
+                                            value={newPlant.wholesalePrice}
+                                            onChange={(e) => setNewPlant({ ...newPlant, wholesalePrice: parseFloat(e.target.value) || 0 })}
+                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm shadow-sm transition"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Perakende Fiyat (₺)</label>
+                                        <input
+                                            type="number"
+                                            value={newPlant.retailPrice}
+                                            onChange={(e) => setNewPlant({ ...newPlant, retailPrice: parseFloat(e.target.value) || 0 })}
+                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm shadow-sm transition"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
                                 </div>
 
                                 {newPlant.type === 'PACKAGING' && (

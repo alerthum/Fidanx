@@ -6,7 +6,29 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [stats, setStats] = useState({ totalStock: 0, totalOrders: 0, totalExpenses: 0 });
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const [pRes, oRes, eRes] = await Promise.all([
+        fetch(`${API_URL}/plants?tenantId=demo-tenant`),
+        fetch(`${API_URL}/sales/orders?tenantId=demo-tenant`),
+        fetch(`${API_URL}/finans/expenses?tenantId=demo-tenant`)
+      ]);
+      const [plants, orders, expenses] = await Promise.all([pRes.json(), oRes.json(), eRes.json()]);
+
+      setStats({
+        totalStock: plants.reduce((acc: number, p: any) => acc + (p.currentStock || 0), 0),
+        totalOrders: orders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0),
+        totalExpenses: expenses.reduce((acc: number, e: any) => acc + (parseFloat(e.amount) || 0), 0)
+      });
+    } catch (err) { }
+  };
 
   const loadDemo = async () => {
     setIsLoading(true);
@@ -71,10 +93,10 @@ export default function DashboardPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard title="Toplam Stok" value="42,850" change="+12%" positive={true} />
-            <StatCard title="Beklenen Satış" value="₺840K" change="+18%" positive={true} />
-            <StatCard title="Sağlık Skoru" value="%94" change="+2%" positive={true} />
-            <StatCard title="Aktif Personel" value="12" change="Stabil" neutral={true} />
+            <StatCard title="Toplam Stok" value={stats.totalStock.toLocaleString()} change="+5%" positive={true} />
+            <StatCard title="Toplam Satış" value={`₺${stats.totalOrders.toLocaleString()}`} change="+12%" positive={true} />
+            <StatCard title="Toplam Gider" value={`₺${stats.totalExpenses.toLocaleString()}`} change="-3%" positive={false} />
+            <StatCard title="Sağlık Skoru" value="%96" change="+2%" positive={true} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">

@@ -12,10 +12,10 @@ export default function Sidebar() {
         { name: 'Üretim Takibi', path: '/uretim', icon: '🚜' },
         { name: 'Reçete Yönetimi', path: '/receteler', icon: '🧪' },
         { name: 'Stok Yönetimi', path: '/stoklar', icon: '🌱' },
-        { name: 'Firma Yönetimi', path: '/firmalar', icon: '🏢' },
-        { name: 'Satışlar', path: '/satislar', icon: '💰' },
+        { name: 'Satınalma & MRP', path: '/satinalma', icon: '🛒' },
+        { name: 'Satış & CRM', path: '/satislar', icon: '💰' },
+        { name: 'Finans & Giderler', path: '/finans', icon: '💎' },
         { name: 'Analizler', path: '/analizler', icon: '📈' },
-        { name: 'Destek & Feedback', path: '/destek', icon: '💬' },
         { name: 'Ayarlar', path: '/ayarlar', icon: '⚙️' },
     ];
 
@@ -24,8 +24,12 @@ export default function Sidebar() {
             {/* Mobile Top Header - Only visible on small screens */}
             <div className="lg:hidden bg-[#1e293b] text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md border-b border-slate-700">
                 <div className="flex items-center gap-2">
-                    <span className="text-emerald-500 font-bold text-xl tracking-tighter">FIDANX</span>
-                    <span className="text-[9px] bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded uppercase font-bold">v1.5</span>
+                    <div className="flex items-center">
+                        <span className="text-emerald-500 font-black text-2xl leading-none">f</span>
+                        <span className="text-white font-bold text-xl tracking-tight">idan</span>
+                        <span className="text-emerald-400 font-black text-2xl leading-none">X</span>
+                    </div>
+                    <span className="text-[9px] bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded uppercase font-bold ml-1">v2.0</span>
                 </div>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
@@ -52,10 +56,14 @@ export default function Sidebar() {
             `}>
                 {/* Logo Area - Desktop Only */}
                 <div className="p-6 border-b border-slate-700/50 hidden lg:block">
-                    <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                        <span className="text-emerald-500">FIDANX</span>
-                        <span className="text-[10px] bg-slate-700 text-slate-400 px-2 py-0.5 rounded uppercase">v1.5</span>
-                    </h2>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center">
+                            <span className="text-emerald-500 font-black text-3xl leading-none">f</span>
+                            <span className="text-white font-bold text-2xl tracking-tighter">idan</span>
+                            <span className="text-emerald-400 font-black text-3xl leading-none">X</span>
+                        </div>
+                        <span className="text-[9px] bg-slate-800 text-slate-500 px-2 py-0.5 rounded uppercase font-bold self-end mb-1">PRO</span>
+                    </div>
                 </div>
 
                 {/* Mobile Specific Header inside Drawer (Optional, for better UX) */}
