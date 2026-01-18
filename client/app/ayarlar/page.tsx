@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar';
 
 export default function AyarlarPage() {
     const [categories, setCategories] = useState<string[]>(['Meyve', 'Süs', 'Endüstriyel']);
+    const [productionStages, setProductionStages] = useState<string[]>(['TEPSİ', 'KÜÇÜK_SAKSI', 'BÜYÜK_SAKSI', 'SATIŞA_HAZIR']);
     const [users, setUsers] = useState<any[]>([
         { name: 'Admin Kullanıcı', role: 'Süper Yetkili', email: 'admin@fidanx.com' }
     ]);
@@ -23,6 +24,7 @@ export default function AyarlarPage() {
             const res = await fetch(`${API_URL}/tenants/demo-tenant`);
             const data = await res.json();
             if (data.settings?.categories) setCategories(data.settings.categories);
+            if (data.settings?.productionStages) setProductionStages(data.settings.productionStages);
             if (data.settings?.users) setUsers(data.settings.users);
         } catch (err) { }
     };
@@ -56,7 +58,7 @@ export default function AyarlarPage() {
             const res = await fetch(`${API_URL}/tenants/demo-tenant/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ categories, users }),
+                body: JSON.stringify({ categories, users, productionStages }),
             });
             if (res.ok) alert('Ayarlar başarıyla kaydedildi ve veritabanına yazıldı.');
             else alert('Kaydetme başarısız: ' + await res.text());
@@ -141,6 +143,48 @@ export default function AyarlarPage() {
 
                     {/* Parametreler */}
                     <div className="space-y-8">
+                        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                            <h3 className="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] mb-4">Üretim Safhaları (Dinamik Şaşırtma)</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {productionStages.map(s => (
+                                    <span key={s} className="bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl text-xs font-bold border border-emerald-100 flex items-center gap-2 group hover:border-emerald-300 transition-all">
+                                        {s}
+                                        <button onClick={() => setProductionStages(productionStages.filter(x => x !== s))} className="text-emerald-300 hover:text-rose-500 transition font-black text-sm">×</button>
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <input
+                                    id="new-stage-input"
+                                    type="text"
+                                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 shadow-sm transition"
+                                    placeholder="Örn: 1. Şaşırtma"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const val = (e.target as HTMLInputElement).value;
+                                            if (val) {
+                                                setProductionStages([...productionStages, val]);
+                                                (e.target as HTMLInputElement).value = '';
+                                            }
+                                        }
+                                    }}
+                                />
+                                <button
+                                    onClick={() => {
+                                        const input = document.getElementById('new-stage-input') as HTMLInputElement;
+                                        if (input.value) {
+                                            setProductionStages([...productionStages, input.value]);
+                                            input.value = '';
+                                        }
+                                    }}
+                                    className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition active:scale-95 shadow-md shadow-emerald-100"
+                                >
+                                    Ekle
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-medium italic">Taşıma (Şaşırtma) butonuna basıldığında bu safhalar sırasıyla önerilecektir.</p>
+                        </div>
+
                         <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
                             <h3 className="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] mb-4">Stok Kategorileri</h3>
                             <div className="flex flex-wrap gap-2">

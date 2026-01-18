@@ -19,9 +19,10 @@ export class PlantsService {
         kod4?: string;
         kod5?: string;
         parentId?: string; // Ana Ağaç ID'si
-        type?: 'MOTHER_TREE' | 'CUTTING' | 'GRAFT' | 'PACKAGING'; // Tip
+        type?: 'MOTHER_TREE' | 'CUTTING' | 'GRAFT' | 'PACKAGING' | 'RAW_MATERIAL'; // Tip
         volume?: string; // Hacim (Litre vb.)
         dimensions?: string; // Ölçüler (Çap x Yükseklik vb.)
+        currentStock?: number; // Mevcut stok miktarı
     }) {
         const docRef = await this.plants(tenantId).add({
             ...data,

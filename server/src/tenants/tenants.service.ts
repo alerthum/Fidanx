@@ -23,6 +23,7 @@ export class TenantsService {
             ...data,
             settings: {
                 categories: ['Meyve', 'Süs', 'Endüstriyel'],
+                productionStages: ['TEPSİ', 'KÜÇÜK_SAKSI', 'BÜYÜK_SAKSI', 'SATIŞA_HAZIR'],
             },
             createdAt: new Date(),
         });

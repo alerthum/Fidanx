@@ -19,7 +19,41 @@ export class ProductionService {
             history: data.history || [{ date: new Date(), action: 'Üretim Başlatıldı' }]
         };
         const docRef = await this.production(tenantId).add(finalData);
+
+        // MRP: Reçete varsa stoktan düş
+        if (data.recipeId && data.quantity) {
+            await this.deductMaterials(tenantId, data.recipeId, data.quantity);
+        }
+
         return { id: docRef.id, ...finalData };
+    }
+
+    private async deductMaterials(tenantId: string, recipeId: string, quantity: number) {
+        try {
+            const recipeDoc = await this.firebase.db.collection('tenants').doc(tenantId).collection('recipes').doc(recipeId).get();
+            if (!recipeDoc.exists) return;
+
+            const recipe = recipeDoc.data();
+            if (!recipe || !recipe.items || !Array.isArray(recipe.items)) return;
+
+            for (const item of recipe.items) {
+                if (item.materialId && item.amount) {
+                    const materialRef = this.firebase.db.collection('tenants').doc(tenantId).collection('plants').doc(item.materialId);
+                    const materialDoc = await materialRef.get();
+
+                    if (materialDoc.exists) {
+                        const matData = materialDoc.data();
+                        const currentStock = matData?.currentStock || 0;
+                        const deduction = item.amount * quantity;
+                        await materialRef.update({
+                            currentStock: Math.max(0, currentStock - deduction)
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Stok düşümü sırasında hata:', error);
+        }
     }
 
     async addHistoryLog(tenantId: string, batchId: string, log: { action: string; note?: string }) {
@@ -85,13 +119,22 @@ export class ProductionService {
 
     async updateStage(tenantId: string, id: string, stage: string, recipeId?: string) {
         const docRef = this.production(tenantId).doc(id);
+        const doc = await docRef.get();
+        const batchData = doc.data();
+
         const updateData: any = { stage };
         if (recipeId) updateData.recipeId = recipeId;
 
         await docRef.update(updateData);
+
+        // MRP: Reçete değiştiyse veya yeni reçete uygulandıysa stoktan düş
+        if (recipeId && batchData?.quantity) {
+            await this.deductMaterials(tenantId, recipeId, batchData.quantity);
+        }
+
         await this.addHistoryLog(tenantId, id, {
             action: `Safha Güncellendi: ${stage}`,
-            note: recipeId ? `Yeni reçete uygulandı.` : undefined
+            note: recipeId ? `Yeni reçete uygulandı. Stok düşümü yapıldı.` : undefined
         });
 
         return { id, stage };

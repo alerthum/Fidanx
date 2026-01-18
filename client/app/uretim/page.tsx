@@ -9,6 +9,7 @@ export default function UretimPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState<any>(null);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [globalStages, setGlobalStages] = useState<string[]>(['TEPSİ', 'KÜÇÜK_SAKSI', 'BÜYÜK_SAKSI', 'SATIŞA_HAZIR']);
     const [isTransplantOpen, setIsTransplantOpen] = useState(false);
     const [transplantData, setTransplantData] = useState({
         nextStage: '',
@@ -30,7 +31,16 @@ export default function UretimPage() {
         fetchBatches();
         fetchMotherTrees();
         fetchRecipes();
+        fetchGlobalSettings();
     }, []);
+
+    const fetchGlobalSettings = async () => {
+        try {
+            const res = await fetch(`${API_URL}/tenants/demo-tenant`);
+            const data = await res.json();
+            if (data.settings?.productionStages) setGlobalStages(data.settings.productionStages);
+        } catch (err) { }
+    };
 
     // Tarih formatlama yardımcısı
     const formatDate = (dateInput: any, includeTime = true) => {
@@ -131,9 +141,8 @@ export default function UretimPage() {
     };
 
     const getNextStage = (current: string) => {
-        const stages = ['TEPSİ', 'KÜÇÜK_SAKSI', 'BÜYÜK_SAKSI', 'SATIŞA_HAZIR'];
-        const idx = stages.indexOf(current);
-        return idx < stages.length - 1 ? stages[idx + 1] : current;
+        const idx = globalStages.indexOf(current);
+        return idx < globalStages.length - 1 ? globalStages[idx + 1] : current;
     };
 
     return (
@@ -503,10 +512,9 @@ export default function UretimPage() {
                                         onChange={(e) => setTransplantData({ ...transplantData, nextStage: e.target.value })}
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm bg-slate-50/50"
                                     >
-                                        <option value="TEPSİ">🛹 TEPSİ (İlk Dikim)</option>
-                                        <option value="KÜÇÜK_SAKSI">🪴 KÜÇÜK SAKSI (1. Şaşırtma)</option>
-                                        <option value="BÜYÜK_SAKSI">🎍 BÜYÜK SAKSI (2. Şaşırtma)</option>
-                                        <option value="SATIŞA_HAZIR">🌲 SATIŞA HAZIR</option>
+                                        {globalStages.map(s => (
+                                            <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div>

@@ -6,10 +6,11 @@ export default function RecipesPage() {
     const [recipes, setRecipes] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecipe, setEditingRecipe] = useState<any>(null);
+    const [materials, setMaterials] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         name: '',
         category: 'Başlangıç',
-        ingredients: '',
+        items: [] as { materialId: string, amount: number }[],
         instructions: ''
     });
 
@@ -17,6 +18,7 @@ export default function RecipesPage() {
 
     useEffect(() => {
         fetchRecipes();
+        fetchMaterials();
     }, []);
 
     const fetchRecipes = async () => {
@@ -27,11 +29,20 @@ export default function RecipesPage() {
         } catch (err) { }
     };
 
+    const fetchMaterials = async () => {
+        try {
+            const res = await fetch(`${API_URL}/plants?tenantId=demo-tenant`);
+            const data = await res.json();
+            // Hammadde ve Ambalaj olanları filtrele
+            const filtered = data.filter((p: any) => p.type === 'RAW_MATERIAL' || p.type === 'PACKAGING');
+            setMaterials(filtered);
+        } catch (err) { }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const payload = {
-            ...formData,
-            ingredients: formData.ingredients.split(',').map(i => i.trim()).filter(i => i !== '')
+            ...formData
         };
 
         try {
@@ -48,7 +59,7 @@ export default function RecipesPage() {
             if (res.ok) {
                 setIsModalOpen(false);
                 setEditingRecipe(null);
-                setFormData({ name: '', category: 'Başlangıç', ingredients: '', instructions: '' });
+                setFormData({ name: '', category: 'Başlangıç', items: [], instructions: '' });
                 fetchRecipes();
             }
         } catch (err) {
@@ -76,7 +87,7 @@ export default function RecipesPage() {
                     <button
                         onClick={() => {
                             setEditingRecipe(null);
-                            setFormData({ name: '', category: 'Başlangıç', ingredients: '', instructions: '' });
+                            setFormData({ name: '', category: 'Başlangıç', items: [], instructions: '' });
                             setIsModalOpen(true);
                         }}
                         className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition active:scale-95"
@@ -103,7 +114,7 @@ export default function RecipesPage() {
                                                 setFormData({
                                                     name: recipe.name,
                                                     category: recipe.category,
-                                                    ingredients: recipe.ingredients?.join(', ') || '',
+                                                    items: recipe.items || [],
                                                     instructions: recipe.instructions || ''
                                                 });
                                                 setIsModalOpen(true);
@@ -123,13 +134,21 @@ export default function RecipesPage() {
                                 <h3 className="text-lg font-bold text-slate-800 mb-3 tracking-tight">{recipe.name}</h3>
                                 <div className="space-y-4">
                                     <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">İçerik Karışımı</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">İçerik & Sarfiyat (MRP)</p>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {recipe.ingredients?.map((ing: string, i: number) => (
-                                                <span key={i} className="bg-slate-50 text-slate-600 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-100 italic">
-                                                    {ing}
-                                                </span>
-                                            ))}
+                                            {recipe.items?.map((item: any, i: number) => {
+                                                const mat = materials.find(m => m.id === item.materialId);
+                                                return (
+                                                    <span key={i} className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-emerald-100 flex items-center gap-1.5">
+                                                        <span className="opacity-50">🧱</span>
+                                                        {mat ? mat.name : 'Silinmiş Materyal'}
+                                                        <span className="bg-emerald-600 text-white px-1.5 py-0.5 rounded text-[8px]">{item.amount}</span>
+                                                    </span>
+                                                );
+                                            })}
+                                            {(!recipe.items || recipe.items.length === 0) && (
+                                                <span className="text-[10px] text-slate-400 italic">Materyal tanımlanmamış.</span>
+                                            )}
                                         </div>
                                     </div>
                                     {recipe.instructions && (
@@ -186,14 +205,65 @@ export default function RecipesPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">İçerikler (Virgülle Ayırın)</label>
-                                    <textarea
-                                        required
-                                        placeholder="%50 Torf, %30 Perlit, %20 Gübre"
-                                        value={formData.ingredients}
-                                        onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm h-32 resize-none bg-slate-50/50"
-                                    />
+                                    <div className="flex justify-between items-center mb-1.5">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Hammadde & Malzemeler</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, items: [...formData.items, { materialId: '', amount: 1 }] })}
+                                            className="text-emerald-600 text-[10px] font-black uppercase tracking-widest hover:underline"
+                                        >
+                                            + Satır Ekle
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {formData.items.map((item, idx) => (
+                                            <div key={idx} className="flex gap-2 animate-in fade-in slide-in-from-top-1 transition-all">
+                                                <select
+                                                    required
+                                                    value={item.materialId}
+                                                    onChange={(e) => {
+                                                        const newItems = [...formData.items];
+                                                        newItems[idx].materialId = e.target.value;
+                                                        setFormData({ ...formData, items: newItems });
+                                                    }}
+                                                    className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 bg-slate-50"
+                                                >
+                                                    <option value="">Materyal Seçin...</option>
+                                                    {materials.map(m => (
+                                                        <option key={m.id} value={m.id}>{m.type === 'RAW_MATERIAL' ? '🧱' : '📦'} {m.name} (Stok: {m.currentStock || 0})</option>
+                                                    ))}
+                                                </select>
+                                                <input
+                                                    required
+                                                    type="number"
+                                                    min="0.001"
+                                                    step="0.001"
+                                                    placeholder="Miktar"
+                                                    value={item.amount}
+                                                    onChange={(e) => {
+                                                        const newItems = [...formData.items];
+                                                        newItems[idx].amount = parseFloat(e.target.value) || 0;
+                                                        setFormData({ ...formData, items: newItems });
+                                                    }}
+                                                    className="w-24 px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, items: formData.items.filter((_, i) => i !== idx) })}
+                                                    className="text-slate-300 hover:text-rose-500 transition px-2"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {formData.items.length === 0 && (
+                                            <div className="bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200 text-center">
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                                                    Henüz malzeme eklenmedi. <br /> Stok düşümü için malzeme eklemelisiniz.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Uygulama Talimatı</label>

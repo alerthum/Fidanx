@@ -15,6 +15,7 @@ interface Plant {
     type?: string;
     volume?: string;
     dimensions?: string;
+    currentStock?: number;
     createdAt: string;
 }
 
@@ -33,7 +34,8 @@ export default function StoklarPage() {
         kod5: '',
         type: 'CUTTING',
         volume: '',
-        dimensions: ''
+        dimensions: '',
+        currentStock: 0
     });
 
     const [error, setError] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export default function StoklarPage() {
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '' });
+                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0 });
                 fetchPlants();
             }
         } catch (err) {
@@ -125,6 +127,7 @@ export default function StoklarPage() {
                                     <tr>
                                         <th className="px-6 py-4">Fidan Adı & Tip</th>
                                         <th className="px-6 py-4">Kategori / SKU</th>
+                                        <th className="px-6 py-4 text-center">Mevcut Stok</th>
                                         <th className="px-6 py-4 text-center">Kod 1-5 (Grup)</th>
                                         <th className="px-6 py-4 text-right">İşlemler</th>
                                     </tr>
@@ -135,12 +138,12 @@ export default function StoklarPage() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-2xl">
-                                                        {plant.type === 'MOTHER_TREE' ? '🌳' : plant.type === 'PACKAGING' ? '📦' : '🌱'}
+                                                        {plant.type === 'MOTHER_TREE' ? '🌳' : plant.type === 'PACKAGING' ? '📦' : plant.type === 'RAW_MATERIAL' ? '🧱' : '🌱'}
                                                     </span>
                                                     <div>
                                                         <p className="font-bold text-slate-700">{plant.name}</p>
                                                         <p className="text-[10px] text-emerald-600 font-black uppercase tracking-tighter">
-                                                            {plant.type === 'MOTHER_TREE' ? '• ANA AĞAÇ' : plant.type === 'PACKAGING' ? '• AMBALAJ / SAKSI' : '• ÜRETİM MATERYALİ'}
+                                                            {plant.type === 'MOTHER_TREE' ? '• ANA AĞAÇ' : plant.type === 'PACKAGING' ? '• AMBALAJ / SAKSI' : plant.type === 'RAW_MATERIAL' ? '• HAMMADDE / GÜBRE' : '• ÜRETİM MATERYALİ'}
                                                         </p>
                                                         {(plant.volume || plant.dimensions) && (
                                                             <p className="text-[9px] text-slate-400 font-bold mt-0.5">
@@ -153,6 +156,9 @@ export default function StoklarPage() {
                                             <td className="px-6 py-4">
                                                 <p className="font-semibold text-slate-600">{plant.category || '-'}</p>
                                                 <p className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase">{plant.sku || 'SKU-YOK'}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="font-bold text-slate-700">{plant.currentStock !== undefined ? plant.currentStock : '-'}</span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex justify-center gap-1">
@@ -241,14 +247,26 @@ export default function StoklarPage() {
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Fidan Tipi</label>
                                     <select
                                         value={newPlant.type}
-                                        onChange={(e) => setNewPlant({ ...newPlant, type: e.target.value as 'CUTTING' | 'MOTHER_TREE' | 'GRAFT' | 'PACKAGING' })}
+                                        onChange={(e) => setNewPlant({ ...newPlant, type: e.target.value as 'CUTTING' | 'MOTHER_TREE' | 'GRAFT' | 'PACKAGING' | 'RAW_MATERIAL' })}
                                         className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm shadow-sm transition"
                                     >
                                         <option value="MOTHER_TREE">🌳 Ana Ağaç (Damlama/Çelik Kaynağı)</option>
                                         <option value="CUTTING">🌱 Üretim Materyali (Dal/Fide)</option>
+                                        <option value="RAW_MATERIAL">🧱 Hammadde (Toprak/Gübre/Perlit)</option>
                                         <option value="PACKAGING">📦 Ambalaj / Saksı / Kap</option>
                                         <option value="GRAFT">🌿 Aşı Materyali</option>
                                     </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Mevcut Stok Miktarı</label>
+                                    <input
+                                        type="number"
+                                        value={newPlant.currentStock}
+                                        onChange={(e) => setNewPlant({ ...newPlant, currentStock: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm shadow-sm transition"
+                                        placeholder="0"
+                                    />
                                 </div>
 
                                 {newPlant.type === 'PACKAGING' && (
