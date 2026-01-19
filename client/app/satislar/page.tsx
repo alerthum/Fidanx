@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
+import ExportButton from '@/components/ExportButton';
 
 export default function SatislarPage() {
     const [cart, setCart] = useState<{ id: string; name: string; qty: number; price: number }[]>([]);
@@ -58,6 +59,12 @@ export default function SatislarPage() {
                 setIsCustomerModalOpen(false);
                 setNewCustomer({ name: '', phone: '', email: '', address: '', note: '' });
                 fetchCustomers();
+                // Aktivite Logla
+                fetch(`${API_URL}/activity?tenantId=demo-tenant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'Yeni Müşteri', title: `${newCustomer.name} sisteme eklendi.`, icon: '👤', color: 'bg-purple-50 text-purple-600' })
+                });
             }
         } catch (err) { }
     };
@@ -99,6 +106,12 @@ export default function SatislarPage() {
                 setSelectedCustomerId('');
                 setActiveTab('ORDERS');
                 fetchOrders();
+                // Aktivite Logla
+                fetch(`${API_URL}/activity?tenantId=demo-tenant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'Satış/Sipariş', title: `${customer?.name} - ₺${totalAmount.toLocaleString()} sipariş oluşturuldu.`, icon: '💰', color: 'bg-emerald-50 text-emerald-600' })
+                });
             }
         } catch (err) { }
     };
@@ -126,6 +139,8 @@ export default function SatislarPage() {
                             >
                                 + Yeni Sipariş
                             </button>
+                            {activeTab === 'ORDERS' && <ExportButton title="Siparişler" tableId="orders-table" />}
+                            {activeTab === 'CUSTOMERS' && <ExportButton title="Müşteriler" tableId="customers-table" />}
                         </div>
                     </div>
 
@@ -234,7 +249,7 @@ export default function SatislarPage() {
 
                     {activeTab === 'ORDERS' && (
                         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                            <table className="w-full text-left font-bold text-sm">
+                            <table className="w-full text-left font-bold text-sm" id="orders-table">
                                 <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider">
                                     <tr>
                                         <th className="px-6 py-4">Müşteri</th>
@@ -268,23 +283,31 @@ export default function SatislarPage() {
                     )}
 
                     {activeTab === 'CUSTOMERS' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {customers.map(c => (
-                                <div key={c.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all group">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-2xl group-hover:bg-emerald-100 transition-colors">👤</div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-800">{c.name}</h3>
-                                            <p className="text-xs text-slate-400">{c.phone || 'Telefon yok'}</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2 border-t border-slate-50 pt-4">
-                                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Adres & Not</p>
-                                        <p className="text-xs text-slate-400 italic">{c.address || 'Adres bilgisi girilmemiş.'}</p>
-                                        {c.note && <p className="text-xs text-blue-500 bg-blue-50 p-2 rounded-lg">{c.note}</p>}
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                            <table className="w-full text-left" id="customers-table">
+                                <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                                    <tr>
+                                        <th className="px-6 py-4">Müşteri Adı</th>
+                                        <th className="px-6 py-4">İletişim</th>
+                                        <th className="px-6 py-4">Adres</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {customers.map(c => (
+                                        <tr key={c.id} className="hover:bg-slate-50 text-sm">
+                                            <td className="px-6 py-4 font-bold text-slate-700">{c.name}</td>
+                                            <td className="px-6 py-4 text-slate-500">
+                                                <p>{c.phone}</p>
+                                                <p className="text-[10px]">{c.email}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-xs text-slate-400">{c.address || '-'}</td>
+                                        </tr>
+                                    ))}
+                                    {customers.length === 0 && (
+                                        <tr><td colSpan={3} className="px-6 py-12 text-center text-slate-400 italic">Kayıtlı müşteri yok.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </div>

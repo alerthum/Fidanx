@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import ExportButton from '@/components/ExportButton';
 
 export default function FinansPage() {
     const [expenses, setExpenses] = useState<any[]>([]);
@@ -73,12 +74,15 @@ export default function FinansPage() {
                         <h1 className="text-xl lg:text-2xl font-bold text-slate-800">Finans & Gider Takibi</h1>
                         <p className="text-xs lg:text-sm text-slate-500">İşletme giderleri ve maliyet yönetimi.</p>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="w-full sm:w-auto bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 shadow-md transition active:scale-95 flex items-center justify-center gap-2"
-                    >
-                        <span>+</span> Yeni Gider Kaydı
-                    </button>
+                    <div className="flex gap-3 w-full sm:w-auto">
+                        <ExportButton title="İşletme Gider Raporu" tableId="gider-table" />
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="w-full sm:w-auto bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 shadow-md transition active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <span>+</span> Yeni Gider Kaydı
+                        </button>
+                    </div>
                 </header>
 
                 <div className="p-4 lg:p-8 space-y-8">
@@ -100,7 +104,7 @@ export default function FinansPage() {
 
                     {/* Expense Table */}
                     <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-                        <table className="w-full text-left">
+                        <table className="w-full text-left" id="gider-table">
                             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
                                 <tr>
                                     <th className="px-6 py-4">Açıklama / Başlık</th>
@@ -164,7 +168,7 @@ export default function FinansPage() {
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">İlişkili Üretim Partisi (Opsiyonel)</label>
                                     <select className="w-full p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 outline-none focus:border-emerald-500 text-sm font-bold text-emerald-800" value={formData.batchId} onChange={e => setFormData({ ...formData, batchId: e.target.value })}>
                                         <option value="">Genel Gider (Parti Bağımsız)</option>
-                                        {batches.map(b => (
+                                        {Array.isArray(batches) && batches.map(b => (
                                             <option key={b.id} value={b.id}>{b.lotId} - {b.plantName}</option>
                                         ))}
                                     </select>

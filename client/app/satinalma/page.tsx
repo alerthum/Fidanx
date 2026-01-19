@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import ExportButton from '@/components/ExportButton';
 
 export default function SatinalmaPage() {
     const [stocks, setStocks] = useState<any[]>([]);
@@ -44,6 +45,8 @@ export default function SatinalmaPage() {
     }, [targetProduction, stocks, recipes]);
 
     const calculateNeeds = () => {
+        if (!recipes.length || !stocks.length) return;
+
         const needsMap: Record<string, { name: string, required: number, current: number }> = {};
 
         targetProduction.forEach(target => {
@@ -52,20 +55,44 @@ export default function SatinalmaPage() {
                 recipe.items.forEach((item: any) => {
                     const material = stocks.find(s => s.id === item.materialId);
                     if (material) {
-                        if (!needsMap[item.materialId]) {
-                            needsMap[item.materialId] = {
+                        const materialId = item.materialId;
+                        if (!needsMap[materialId]) {
+                            needsMap[materialId] = {
                                 name: material.name,
                                 required: 0,
-                                current: material.currentStock || 0
+                                current: Number(material.currentStock) || 0
                             };
                         }
-                        needsMap[item.materialId].required += (item.amount * target.quantity);
+                        const qty = Number(target.quantity) || 0;
+                        const amount = Number(item.amount) || 0;
+                        needsMap[materialId].required += (amount * qty);
                     }
                 });
             }
         });
 
-        setAnalysis(Object.entries(needsMap).map(([id, data]) => ({ id, ...data })));
+        const result = Object.entries(needsMap).map(([id, data]) => ({ id, ...data }));
+        setAnalysis(result);
+    };
+
+    const handleRFQ = async () => {
+        if (analysis.length === 0) return alert('Analiz yapılacak veri yok.');
+        const missing = analysis.filter(i => i.current < i.required);
+        if (missing.length === 0) return alert('Tüm malzemeler yeterli. Satınalmaya gerek yok!');
+
+        try {
+            await fetch(`${API_URL}/activity?tenantId=demo-tenant`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'Satınalma / RFQ',
+                    title: `${missing.length} kalem malzeme için teklif isteği (RFQ) oluşturuldu.`,
+                    icon: '🛒',
+                    color: 'bg-orange-50 text-orange-600'
+                })
+            });
+            alert('Tedarikçilere RFQ (Teklif İsteği) gönderildi.');
+        } catch (err) { }
     };
 
     return (
@@ -77,6 +104,7 @@ export default function SatinalmaPage() {
                         <h1 className="text-xl lg:text-2xl font-bold text-slate-800">Satınalma & MRP Planlama</h1>
                         <p className="text-xs lg:text-sm text-slate-500">Üretim hedeflerine göre malzeme ihtiyaç analizi.</p>
                     </div>
+                    <ExportButton title="Malzeme İhtiyaç Raporu (MRP)" tableId="mrp-table" />
                 </header>
 
                 <div className="p-4 lg:p-8 grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -127,7 +155,7 @@ export default function SatinalmaPage() {
                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">📉 MALZEME İHTİYAÇ ANALİZİ (MRP)</h3>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left">
+                                <table className="w-full text-left" id="mrp-table">
                                     <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                                         <tr>
                                             <th className="px-6 py-4">Malzeme Adı</th>
@@ -172,7 +200,11 @@ export default function SatinalmaPage() {
                                 <h4 className="text-xl font-bold">Otomatik Sipariş Oluştur</h4>
                                 <p className="text-slate-400 text-sm mt-1">Eksik olan tüm malzemeleri tedarikçilere RFQ (Teklif İsteği) olarak gönderin.</p>
                             </div>
-                            <button className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition shadow-lg shadow-emerald-500/20 active:scale-95">
+                            <button
+                                onClick={handleRFQ}
+                                className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+                                disabled={analysis.length === 0}
+                            >
                                 RFQ BAŞLAT
                             </button>
                         </div>

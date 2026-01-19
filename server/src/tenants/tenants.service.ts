@@ -41,7 +41,7 @@ export class TenantsService {
     }
 
     async updateSettings(id: string, settings: any) {
-        await this.tenants.doc(id).update({ settings });
+        await this.tenants.doc(id).set({ settings }, { merge: true });
         return { success: true };
     }
 }

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import ExportButton from '@/components/ExportButton';
 
 interface Plant {
     id: string;
@@ -97,12 +98,15 @@ export default function StoklarPage() {
                         <h1 className="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Stok Listesi</h1>
                         <p className="text-xs lg:text-sm text-slate-500">Tüm fidan türleri, ana ağaçlar ve grup kodları.</p>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition active:scale-95"
-                    >
-                        + Yeni Stok Kaydı
-                    </button>
+                    <div className="flex gap-3 w-full sm:w-auto">
+                        <ExportButton title="Mevcut Stok Durumu" tableId="stok-table" />
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex-1 sm:flex-none bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition active:scale-95"
+                        >
+                            + Yeni Stok Ekle
+                        </button>
+                    </div>
                 </header>
 
                 <div className="flex-1 p-4 md:p-8">
@@ -126,7 +130,7 @@ export default function StoklarPage() {
 
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden w-full">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse min-w-[1000px]">
+                            <table className="w-full text-left border-collapse min-w-[1000px]" id="stok-table">
                                 <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
                                     <tr>
                                         <th className="px-6 py-4">Fidan Adı & Tip</th>

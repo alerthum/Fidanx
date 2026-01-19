@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import ExportButton from '@/components/ExportButton';
 
 export default function UretimPage() {
     const [batches, setBatches] = useState<any[]>([]);
@@ -152,14 +153,17 @@ export default function UretimPage() {
                 <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center lg:sticky lg:top-0 z-30 gap-4">
                     <div>
                         <h1 className="text-xl lg:text-2xl font-bold text-slate-800">Üretim Takibi</h1>
-                        <p className="text-xs lg:text-sm text-slate-500">Ana ağaçlardan alınan dalların büyüme süreci.</p>
+                        <p className="text-xs lg:text-sm text-slate-500">Parti bazlı üretim safhaları ve lot yönetimi.</p>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="w-full sm:w-auto bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition active:scale-95"
-                    >
-                        + Yeni Üretim Başlat
-                    </button>
+                    <div className="flex gap-3 w-full sm:w-auto">
+                        <ExportButton title="Üretim Durum Raporu" tableId="uretim-table" />
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex-1 sm:flex-none bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition active:scale-95"
+                        >
+                            + Yeni Üretim Başlat
+                        </button>
+                    </div>
                 </header>
 
                 <div className="p-4 lg:p-8 space-y-6 lg:space-y-8">
@@ -183,7 +187,7 @@ export default function UretimPage() {
 
                     {/* Production List - Desktop Table */}
                     <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hidden lg:block">
-                        <table className="w-full text-left">
+                        <table className="w-full text-left" id="uretim-table">
                             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
                                 <tr>
                                     <th className="px-6 py-4">Parti & Lot ID</th>

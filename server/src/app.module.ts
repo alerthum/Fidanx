@@ -9,6 +9,7 @@ import { ProductionModule } from './production/production.module';
 import { RecipesModule } from './recipes/recipes.module';
 import { SalesModule } from './sales/sales.module';
 import { FinansModule } from './finans/finans.module';
+import { ActivityModule } from './activity/activity.module';
 import { IntegrationModule } from './integration/integration.module';
 import { SeedController } from './seed/seed.controller';
 
@@ -22,6 +23,7 @@ import { SeedController } from './seed/seed.controller';
     RecipesModule,
     SalesModule,
     FinansModule,
+    ActivityModule,
     IntegrationModule,
   ],
   controllers: [AppController, SeedController],

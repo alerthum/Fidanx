@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class ProductionService {
-    constructor(private firebase: FirebaseService) { }
+    constructor(
+        private firebase: FirebaseService,
+        private activity: ActivityService
+    ) { }
 
     private production(tenantId: string) {
         return this.firebase.db.collection('tenants').doc(tenantId).collection('production');
@@ -18,15 +22,26 @@ export class ProductionService {
             startDate: data.startDate || new Date(),
             history: data.history || [{ date: new Date(), action: 'Üretim Başlatıldı' }]
         };
+
         // MRP: Reçete varsa önce stok kontrolü yap sonra düş
         if (data.recipeId && data.quantity) {
             await this.checkStockAvailability(tenantId, data.recipeId, data.quantity);
-            const docRef = await this.production(tenantId).add(finalData);
-            await this.deductMaterials(tenantId, data.recipeId, data.quantity);
-            return { id: docRef.id, ...finalData };
         }
 
         const docRef = await this.production(tenantId).add(finalData);
+
+        if (data.recipeId && data.quantity) {
+            await this.deductMaterials(tenantId, data.recipeId, data.quantity);
+        }
+
+        // Aktivite Log
+        await this.activity.log(tenantId, {
+            action: 'Üretim',
+            title: `${finalData.lotId} - ${finalData.plantName || 'Bilinmeyen Ürün'} üretimi başlatıldı.`,
+            icon: '🌱',
+            color: 'bg-emerald-50 text-emerald-600'
+        });
+
         return { id: docRef.id, ...finalData };
     }
 
@@ -151,6 +166,10 @@ export class ProductionService {
         const doc = await docRef.get();
         const batchData = doc.data();
 
+        if (!doc.exists || !batchData) {
+            throw new NotFoundException('Üretim partisi bulunamadı.');
+        }
+
         const updateData: any = { stage };
         if (recipeId) updateData.recipeId = recipeId;
 
@@ -166,6 +185,14 @@ export class ProductionService {
         await this.addHistoryLog(tenantId, id, {
             action: `Safha Güncellendi: ${stage}`,
             note: recipeId ? `Yeni reçete uygulandı. Stok düşümü yapıldı.` : undefined
+        });
+
+        // Aktivite Log
+        await this.activity.log(tenantId, {
+            action: 'Safha Değişimi',
+            title: `${batchData.lotId} -> ${stage} safhasına geçti.`,
+            icon: '🚀',
+            color: 'bg-blue-50 text-blue-600'
         });
 
         return { id, stage };

@@ -7,11 +7,21 @@ import Link from 'next/link';
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [stats, setStats] = useState({ totalStock: 0, totalOrders: 0, totalExpenses: 0 });
+  const [activities, setActivities] = useState<any[]>([]);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
 
   useEffect(() => {
     fetchStats();
+    fetchActivities();
   }, []);
+
+  const fetchActivities = async () => {
+    try {
+      const res = await fetch(`${API_URL}/activity?tenantId=demo-tenant`);
+      const data = await res.json();
+      setActivities(data);
+    } catch (err) { }
+  };
 
   const fetchStats = async () => {
     try {
@@ -34,13 +44,27 @@ export default function DashboardPage() {
     setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/seed?tenantId=demo-tenant`, { method: 'POST' });
-      if (res.ok) alert('Demo veriler başarıyla yüklendi!');
-      else alert('Sunucu hatası: ' + await res.text());
+      if (res.ok) {
+        alert('Demo veriler başarıyla yüklendi!');
+        fetchStats();
+        fetchActivities();
+      } else alert('Sunucu hatası: ' + await res.text());
     } catch (err) {
       alert('Sunucuya bağlanılamadı.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuickAction = async (action: string, icon: string, color: string) => {
+    try {
+      await fetch(`${API_URL}/activity?tenantId=demo-tenant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'Hızlı Operasyon', title: `${action} işlemi kaydedildi.`, icon, color })
+      });
+      fetchActivities();
+    } catch (err) { }
   };
 
   return (
@@ -132,10 +156,10 @@ export default function DashboardPage() {
               <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
                 <h3 className="text-[11px] font-black text-slate-400 uppercase mb-6 tracking-[0.2em]">Hızlı Operasyonlar</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <QuickAction icon="🚜" label="Gübreleme" />
-                  <QuickAction icon="💧" label="Sulama" />
-                  <QuickAction icon="📦" label="Sayım" />
-                  <QuickAction icon="🚚" label="Sevkiyat" />
+                  <QuickAction icon="🚜" label="Gübreleme" onClick={() => handleQuickAction('Gübreleme', '🚜', 'bg-orange-50 text-orange-600')} />
+                  <QuickAction icon="💧" label="Sulama" onClick={() => handleQuickAction('Sulama', '💧', 'bg-blue-50 text-blue-600')} />
+                  <QuickAction icon="📦" label="Sayım" onClick={() => handleQuickAction('Stok Sayımı', '📦', 'bg-slate-50 text-slate-600')} />
+                  <QuickAction icon="🚚" label="Sevkiyat Onay" onClick={() => handleQuickAction('Sevkiyat Onayı', '🚚', 'bg-emerald-50 text-emerald-600')} />
                 </div>
               </div>
             </div>
@@ -148,22 +172,23 @@ export default function DashboardPage() {
               <button className="text-emerald-600 text-xs font-black uppercase tracking-widest hover:underline">Tümünü Gör</button>
             </div>
             <div className="divide-y divide-slate-100">
-              {[
-                { title: 'İstanbul Sevkiyatı Tamamlandı', time: '1 saat önce', icon: '🚚', color: 'bg-blue-50 text-blue-600' },
-                { title: 'Zeytin Fidanı Dikimi - Blok A', time: '3 saat önce', icon: '🌱', color: 'bg-emerald-50 text-emerald-600' },
-                { title: 'Gübreleme Operasyonu - Marmara', time: '5 saat önce', icon: '🚜', color: 'bg-orange-50 text-orange-600' }
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-6 px-8 py-5 hover:bg-slate-50/80 transition cursor-pointer group">
-                  <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition-transform`}>{item.icon}</div>
+              {activities.map((item, i) => (
+                <div key={item.id || i} className="flex items-center gap-6 px-8 py-5 hover:bg-slate-50/80 transition cursor-pointer group">
+                  <div className={`w-12 h-12 ${item.color || 'bg-slate-50'} rounded-xl flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition-transform`}>{item.icon || '📝'}</div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-slate-700 mb-0.5">{item.title}</p>
-                    <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none">{item.time}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none">
+                      {item.action} • {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                   <div className="text-slate-300 group-hover:text-emerald-500 transition-colors">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                   </div>
                 </div>
               ))}
+              {activities.length === 0 && (
+                <p className="p-8 text-center text-slate-400 italic">Henüz sistem kaydı bulunmuyor.</p>
+              )}
             </div>
           </div>
         </div>
@@ -202,11 +227,11 @@ function HealthBar({ label, percentage, color }: any) {
   );
 }
 
-function QuickAction({ icon, label }: any) {
+function QuickAction({ icon, label, onClick }: any) {
   return (
-    <button className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-2xl hover:bg-emerald-600 hover:text-white transition-all duration-300 border border-slate-100 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-200 group">
+    <button onClick={onClick} className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-2xl hover:bg-emerald-600 hover:text-white transition-all duration-300 border border-slate-100 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-200 group">
       <span className="text-3xl mb-2 group-hover:scale-125 transition-transform">{icon}</span>
-      <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+      <span className="text-[10px] font-black uppercase tracking-widest text-center">{label}</span>
     </button>
   );
 }
