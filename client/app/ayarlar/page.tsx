@@ -52,21 +52,56 @@ export default function AyarlarPage() {
         }
     };
 
-    const handleSaveSettings = async () => {
+    const handleSaveSettings = async (customCategories?: string[], customStages?: string[], customUsers?: any[]) => {
         setIsSaving(true);
         try {
+            const payload = {
+                categories: customCategories || categories,
+                users: customUsers || users,
+                productionStages: customStages || productionStages
+            };
             const res = await fetch(`${API_URL}/tenants/demo-tenant/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ categories, users, productionStages }),
+                body: JSON.stringify(payload),
             });
-            if (res.ok) alert('Ayarlar başarıyla kaydedildi ve veritabanına yazıldı.');
-            else alert('Kaydetme başarısız: ' + await res.text());
+            if (!res.ok) alert('Kaydetme başarısız: ' + await res.text());
         } catch (err) {
             alert('Sunucuya bağlanılamadı.');
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleAddStage = () => {
+        const input = document.getElementById('new-stage-input') as HTMLInputElement;
+        if (input.value) {
+            const newList = [...productionStages, input.value];
+            setProductionStages(newList);
+            input.value = '';
+            handleSaveSettings(undefined, newList);
+        }
+    };
+
+    const handleRemoveStage = (s: string) => {
+        const newList = productionStages.filter(x => x !== s);
+        setProductionStages(newList);
+        handleSaveSettings(undefined, newList);
+    };
+
+    const handleAddCategory = () => {
+        if (newCategory) {
+            const newList = [...categories, newCategory];
+            setCategories(newList);
+            setNewCategory('');
+            handleSaveSettings(newList);
+        }
+    };
+
+    const handleRemoveCategory = (c: string) => {
+        const newList = categories.filter(x => x !== c);
+        setCategories(newList);
+        handleSaveSettings(newList);
     };
 
     return (
@@ -78,13 +113,16 @@ export default function AyarlarPage() {
                         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Sistem Ayarları</h1>
                         <p className="text-sm text-slate-500 font-medium">Kullanıcı yönetimi, roller ve parametreler.</p>
                     </div>
-                    <button
-                        onClick={handleSaveSettings}
-                        disabled={isSaving}
-                        className="bg-emerald-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition active:scale-95 disabled:opacity-50"
-                    >
-                        {isSaving ? 'Buluta Yazılıyor...' : '✓ Tüm Değişiklikleri Kaydet'}
-                    </button>
+                    <div className="flex items-center gap-4">
+                        {isSaving && <span className="text-[10px] font-black text-emerald-600 animate-pulse uppercase tracking-widest">Buluta Yazılıyor...</span>}
+                        <button
+                            onClick={() => handleSaveSettings()}
+                            disabled={isSaving}
+                            className="bg-emerald-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition active:scale-95 disabled:opacity-50"
+                        >
+                            ✓ Değişiklikleri Kaydet
+                        </button>
+                    </div>
                 </header>
 
                 <div className="p-4 md:p-8 grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -149,7 +187,7 @@ export default function AyarlarPage() {
                                 {productionStages.map(s => (
                                     <span key={s} className="bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl text-xs font-bold border border-emerald-100 flex items-center gap-2 group hover:border-emerald-300 transition-all">
                                         {s}
-                                        <button onClick={() => setProductionStages(productionStages.filter(x => x !== s))} className="text-emerald-300 hover:text-rose-500 transition font-black text-sm">×</button>
+                                        <button onClick={() => handleRemoveStage(s)} className="text-emerald-300 hover:text-rose-500 transition font-black text-sm">×</button>
                                     </span>
                                 ))}
                             </div>
@@ -161,22 +199,12 @@ export default function AyarlarPage() {
                                     placeholder="Örn: 1. Şaşırtma"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
-                                            const val = (e.target as HTMLInputElement).value;
-                                            if (val) {
-                                                setProductionStages([...productionStages, val]);
-                                                (e.target as HTMLInputElement).value = '';
-                                            }
+                                            handleAddStage();
                                         }
                                     }}
                                 />
                                 <button
-                                    onClick={() => {
-                                        const input = document.getElementById('new-stage-input') as HTMLInputElement;
-                                        if (input.value) {
-                                            setProductionStages([...productionStages, input.value]);
-                                            input.value = '';
-                                        }
-                                    }}
+                                    onClick={handleAddStage}
                                     className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition active:scale-95 shadow-md shadow-emerald-100"
                                 >
                                     Ekle
@@ -191,7 +219,7 @@ export default function AyarlarPage() {
                                 {categories.map(c => (
                                     <span key={c} className="bg-slate-50 text-slate-600 px-3 py-2 rounded-xl text-xs font-bold border border-slate-100 flex items-center gap-2 group hover:border-emerald-200 hover:bg-emerald-50 transition-all">
                                         {c}
-                                        <button onClick={() => setCategories(categories.filter(x => x !== c))} className="text-slate-300 hover:text-rose-500 transition font-black text-sm">×</button>
+                                        <button onClick={() => handleRemoveCategory(c)} className="text-slate-300 hover:text-rose-500 transition font-black text-sm">×</button>
                                     </span>
                                 ))}
                             </div>
@@ -200,11 +228,12 @@ export default function AyarlarPage() {
                                     type="text"
                                     value={newCategory}
                                     onChange={(e) => setNewCategory(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddCategory(); }}
                                     className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-500 shadow-sm transition"
                                     placeholder="Örn: Zeytin Fidanı"
                                 />
                                 <button
-                                    onClick={() => { if (newCategory) { setCategories([...categories, newCategory]); setNewCategory(''); } }}
+                                    onClick={handleAddCategory}
                                     className="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition active:scale-95"
                                 >
                                     Ekle
