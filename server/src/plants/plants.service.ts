@@ -25,6 +25,7 @@ export class PlantsService {
         currentStock?: number; // Mevcut stok miktarı
         wholesalePrice?: number; // Toptan Fiyat
         retailPrice?: number; // Perakende Fiyat
+        criticalStock?: number; // Kritik Stok Seviyesi
     }) {
         const docRef = await this.plants(tenantId).add({
             ...data,
@@ -46,5 +47,10 @@ export class PlantsService {
     async findCuttingsByMother(tenantId: string, motherId: string) {
         const snapshot = await this.plants(tenantId).where('parentId', '==', motherId).get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+
+    async update(tenantId: string, id: string, data: any) {
+        await this.plants(tenantId).doc(id).update(data);
+        return { id, ...data };
     }
 }

@@ -12,6 +12,7 @@ import { FinansModule } from './finans/finans.module';
 import { ActivityModule } from './activity/activity.module';
 import { IntegrationModule } from './integration/integration.module';
 import { SeedController } from './seed/seed.controller';
+import { PurchasesModule } from './purchases/purchases.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SeedController } from './seed/seed.controller';
     FinansModule,
     ActivityModule,
     IntegrationModule,
+    PurchasesModule,
   ],
   controllers: [AppController, SeedController],
   providers: [AppService],

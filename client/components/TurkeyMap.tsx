@@ -1,17 +1,21 @@
 "use client";
 import React, { useState } from 'react';
 
-const regions = [
-    { id: 'marmara', name: 'Marmara', value: '₺320K', d: "M20,50 Q40,30 80,45 L85,85 Q60,105 20,95 Z" },
-    { id: 'karadeniz', name: 'Karadeniz', value: '₺150K', d: "M85,45 Q150,30 240,45 L245,75 Q180,65 85,85 Z" },
-    { id: 'ege', name: 'Ege', value: '₺240K', d: "M20,100 Q40,110 55,120 L45,170 Q20,175 15,160 Z" },
-    { id: 'ic-anadolu', name: 'İç Anadolu', value: '₺410K', d: "M85,90 Q120,80 165,90 L160,145 Q110,155 75,145 Z" },
-    { id: 'akdeniz', name: 'Akdeniz', value: '₺180K', d: "M55,145 Q120,140 180,150 L175,185 Q110,195 50,180 Z" },
-    { id: 'dogu', name: 'Doğu Anadolu', value: '₺90K', d: "M165,90 Q220,90 250,105 L240,160 Q200,165 170,145 Z" },
-    { id: 'guneydogu', name: 'Güneydoğu Anadolu', value: '₺60K', d: "M175,150 Q220,150 245,160 L240,185 Q210,195 180,185 Z" },
-];
+export default function TurkeyMap({ data }: { data?: Record<string, number> }) {
+    const defaultRegions = [
+        { id: 'marmara', name: 'Marmara', d: "M20,50 Q40,30 80,45 L85,85 Q60,105 20,95 Z" },
+        { id: 'karadeniz', name: 'Karadeniz', d: "M85,45 Q150,30 240,45 L245,75 Q180,65 85,85 Z" },
+        { id: 'ege', name: 'Ege', d: "M20,100 Q40,110 55,120 L45,170 Q20,175 15,160 Z" },
+        { id: 'ic-anadolu', name: 'İç Anadolu', d: "M85,90 Q120,80 165,90 L160,145 Q110,155 75,145 Z" },
+        { id: 'akdeniz', name: 'Akdeniz', d: "M55,145 Q120,140 180,150 L175,185 Q110,195 50,180 Z" },
+        { id: 'dogu', name: 'Doğu Anadolu', d: "M165,90 Q220,90 250,105 L240,160 Q200,165 170,145 Z" },
+        { id: 'guneydogu', name: 'Güneydoğu Anadolu', d: "M175,150 Q220,150 245,160 L240,185 Q210,195 180,185 Z" },
+    ];
 
-export default function TurkeyMap() {
+    const regions = defaultRegions.map(r => ({
+        ...r,
+        value: data && data[r.id] ? `₺${data[r.id].toLocaleString()}` : '₺0'
+    }));
     const [hovered, setHovered] = useState<string | null>(null);
 
     return (
@@ -28,8 +32,8 @@ export default function TurkeyMap() {
                             onMouseEnter={() => setHovered(region.id)}
                             onMouseLeave={() => setHovered(null)}
                             className={`transition-all duration-500 cursor-pointer stroke-white stroke-[0.5] ${hovered === region.id
-                                    ? 'fill-emerald-400 scale-[1.02] filter drop-shadow-xl'
-                                    : 'fill-emerald-600'
+                                ? 'fill-emerald-400 scale-[1.02] filter drop-shadow-xl'
+                                : 'fill-emerald-600'
                                 }`}
                             style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
                         />

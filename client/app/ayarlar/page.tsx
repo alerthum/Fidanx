@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 export default function AyarlarPage() {
     const [categories, setCategories] = useState<string[]>(['Meyve', 'Süs', 'Endüstriyel']);
     const [productionStages, setProductionStages] = useState<string[]>(['TEPSİ', 'KÜÇÜK_SAKSI', 'BÜYÜK_SAKSI', 'SATIŞA_HAZIR']);
+    const [locations, setLocations] = useState<string[]>(['Sera 1', 'Sera 2', 'Açık Alan', 'Depo']);
     const [users, setUsers] = useState<any[]>([
         { name: 'Admin Kullanıcı', role: 'Süper Yetkili', email: 'admin@fidanx.com' }
     ]);
@@ -12,6 +13,11 @@ export default function AyarlarPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [newUser, setNewUser] = useState({ name: '', email: '', role: 'Personel' });
+    const [newLocation, setNewLocation] = useState('');
+    const [expenseTypes, setExpenseTypes] = useState<string[]>(['Enerji', 'İşçilik', 'Nakliye', 'Bakım', 'Dikim', 'Gübre', 'İlaç']);
+    const [measurementParams, setMeasurementParams] = useState<string[]>(['Sıcaklık', 'Nem']);
+    const [newExpenseType, setNewExpenseType] = useState('');
+    const [newMeasurementParam, setNewMeasurementParam] = useState('');
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
 
@@ -26,6 +32,9 @@ export default function AyarlarPage() {
             if (data.settings?.categories) setCategories(data.settings.categories);
             if (data.settings?.productionStages) setProductionStages(data.settings.productionStages);
             if (data.settings?.users) setUsers(data.settings.users);
+            if (data.settings?.locations) setLocations(data.settings.locations);
+            if (data.settings?.expenseTypes) setExpenseTypes(data.settings.expenseTypes);
+            if (data.settings?.measurementParams) setMeasurementParams(data.settings.measurementParams);
         } catch (err) { }
     };
 
@@ -52,14 +61,18 @@ export default function AyarlarPage() {
         }
     };
 
-    const handleSaveSettings = async (customCategories?: string[], customStages?: string[], customUsers?: any[]) => {
+    const handleSaveSettings = async (customCategories?: string[], customStages?: string[], customUsers?: any[], customLocations?: string[], customExpenseTypes?: string[], customMeasurementParams?: string[]) => {
         setIsSaving(true);
         try {
             const payload = {
                 categories: customCategories || categories,
                 users: customUsers || users,
-                productionStages: customStages || productionStages
+                productionStages: customStages || productionStages,
+                locations: customLocations || locations,
+                expenseTypes: customExpenseTypes || expenseTypes,
+                measurementParams: customMeasurementParams || measurementParams
             };
+
             const res = await fetch(`${API_URL}/tenants/demo-tenant/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -102,6 +115,53 @@ export default function AyarlarPage() {
         const newList = categories.filter(x => x !== c);
         setCategories(newList);
         handleSaveSettings(newList);
+    };
+
+
+
+    const handleAddLocation = () => {
+        if (newLocation) {
+            const newList = [...locations, newLocation];
+            setLocations(newList);
+            setNewLocation('');
+            handleSaveSettings(undefined, undefined, undefined, newList);
+        }
+    };
+
+    const handleRemoveLocation = (l: string) => {
+        const newList = locations.filter(x => x !== l);
+        setLocations(newList);
+        handleSaveSettings(undefined, undefined, undefined, newList);
+    };
+
+    const handleAddExpenseType = () => {
+        if (newExpenseType) {
+            const newList = [...expenseTypes, newExpenseType];
+            setExpenseTypes(newList);
+            setNewExpenseType('');
+            handleSaveSettings(undefined, undefined, undefined, undefined, newList);
+        }
+    };
+
+    const handleRemoveExpenseType = (e: string) => {
+        const newList = expenseTypes.filter(x => x !== e);
+        setExpenseTypes(newList);
+        handleSaveSettings(undefined, undefined, undefined, undefined, newList);
+    };
+
+    const handleAddMeasurementParam = () => {
+        if (newMeasurementParam) {
+            const newList = [...measurementParams, newMeasurementParam];
+            setMeasurementParams(newList);
+            setNewMeasurementParam('');
+            handleSaveSettings(undefined, undefined, undefined, undefined, undefined, newList);
+        }
+    };
+
+    const handleRemoveMeasurementParam = (m: string) => {
+        const newList = measurementParams.filter(x => x !== m);
+        setMeasurementParams(newList);
+        handleSaveSettings(undefined, undefined, undefined, undefined, undefined, newList);
     };
 
     return (
@@ -240,73 +300,160 @@ export default function AyarlarPage() {
                                 </button>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="bg-rose-50/50 p-8 rounded-2xl border border-rose-100 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
-                            <div className="relative z-10">
-                                <h3 className="font-black text-rose-800 uppercase text-[10px] tracking-[0.2em] mb-2">Veritabanını Sıfırla</h3>
-                                <p className="text-xs text-rose-600 font-medium">Tüm üretim, stok ve analiz verileri kalıcı olarak silinecektir.</p>
-                            </div>
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                        <h3 className="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] mb-4">Üretim Konumları (Sera/Bahçe)</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {locations.map(l => (
+                                <span key={l} className="bg-amber-50 text-amber-700 px-3 py-2 rounded-xl text-xs font-bold border border-amber-100 flex items-center gap-2 group hover:border-amber-300 transition-all">
+                                    {l}
+                                    <button onClick={() => handleRemoveLocation(l)} className="text-amber-300 hover:text-rose-500 transition font-black text-sm">×</button>
+                                </span>
+                            ))}
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <input
+                                type="text"
+                                value={newLocation}
+                                onChange={(e) => setNewLocation(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddLocation(); }}
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-amber-500 shadow-sm transition"
+                                placeholder="Örn: Sera 1, Bahçe A, Depo"
+                            />
                             <button
-                                onClick={handleClearData}
-                                className="relative z-10 bg-white text-rose-600 border border-rose-200 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95"
+                                onClick={handleAddLocation}
+                                className="bg-amber-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-700 transition active:scale-95"
                             >
-                                SİSTEMİ TEMİZLE
+                                Ekle
                             </button>
-                            {/* Warning Decoration */}
-                            <div className="absolute right-[-20px] top-[-20px] text-[100px] opacity-5 pointer-events-none grayscale">⚠️</div>
                         </div>
                     </div>
+
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                        <h3 className="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] mb-4">Gider Kalemleri</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {expenseTypes.map(e => (
+                                <span key={e} className="bg-indigo-50 text-indigo-700 px-3 py-2 rounded-xl text-xs font-bold border border-indigo-100 flex items-center gap-2 group hover:border-indigo-300 transition-all">
+                                    {e}
+                                    <button onClick={() => handleRemoveExpenseType(e)} className="text-indigo-300 hover:text-rose-500 transition font-black text-sm">×</button>
+                                </span>
+                            ))}
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <input
+                                type="text"
+                                value={newExpenseType}
+                                onChange={(e) => setNewExpenseType(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddExpenseType(); }}
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-500 shadow-sm transition"
+                                placeholder="Örn: Nakliye, İşçilik"
+                            />
+                            <button
+                                onClick={handleAddExpenseType}
+                                className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition active:scale-95"
+                            >
+                                Ekle
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                        <h3 className="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] mb-4">Ortam Ölçüm Parametreleri</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {measurementParams.map(m => (
+                                <span key={m} className="bg-sky-50 text-sky-700 px-3 py-2 rounded-xl text-xs font-bold border border-sky-100 flex items-center gap-2 group hover:border-sky-300 transition-all">
+                                    {m}
+                                    <button onClick={() => handleRemoveMeasurementParam(m)} className="text-sky-300 hover:text-rose-500 transition font-black text-sm">×</button>
+                                </span>
+                            ))}
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <input
+                                type="text"
+                                value={newMeasurementParam}
+                                onChange={(e) => setNewMeasurementParam(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddMeasurementParam(); }}
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-sky-500 shadow-sm transition"
+                                placeholder="Örn: CO2, Toprak Nemi"
+                            />
+                            <button
+                                onClick={handleAddMeasurementParam}
+                                className="bg-sky-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-sky-700 transition active:scale-95"
+                            >
+                                Ekle
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-rose-50/50 p-8 rounded-2xl border border-rose-100 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative">
+                        <div className="relative z-10">
+                            <h3 className="font-black text-rose-800 uppercase text-[10px] tracking-[0.2em] mb-2">Veritabanını Sıfırla</h3>
+                            <p className="text-xs text-rose-600 font-medium">Tüm üretim, stok ve analiz verileri kalıcı olarak silinecektir.</p>
+                        </div>
+                        <button
+                            onClick={handleClearData}
+                            className="relative z-10 bg-white text-rose-600 border border-rose-200 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95"
+                        >
+                            SİSTEMİ TEMİZLE
+                        </button>
+                        {/* Warning Decoration */}
+                        <div className="absolute right-[-20px] top-[-20px] text-[100px] opacity-5 pointer-events-none grayscale">⚠️</div>
+                    </div>
+
                 </div>
 
                 {/* User Creation Modal */}
-                {isUserModalOpen && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200">
-                            <h3 className="text-xl font-bold text-slate-800 mb-6 tracking-tight">Yeni Kullanıcı Hesabı</h3>
-                            <form onSubmit={handleAddUser} className="space-y-5">
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tam Adı</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        value={newUser.name}
-                                        onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm transition"
-                                        placeholder="Örn: Ahmet Yılmaz"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">E-Posta Adresi</label>
-                                    <input
-                                        required
-                                        type="email"
-                                        value={newUser.email}
-                                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm transition"
-                                        placeholder="ahmet@fidanx.com"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Erişim Yetkisi</label>
-                                    <select
-                                        value={newUser.role}
-                                        onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm transition appearance-none bg-slate-50"
-                                    >
-                                        <option value="Admin">Süper Yetkili (Admin)</option>
-                                        <option value="Personel">Saha Personeli</option>
-                                        <option value="Gözlemci">Sadece Görüntüleme</option>
-                                    </select>
-                                </div>
-                                <div className="flex gap-4 pt-4">
-                                    <button type="button" onClick={() => setIsUserModalOpen(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition uppercase text-xs tracking-widest">Vazgeç</button>
-                                    <button type="submit" className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition active:scale-95 uppercase text-xs tracking-widest">Kullanıcıyı Kaydet</button>
-                                </div>
-                            </form>
+                {
+                    isUserModalOpen && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200">
+                                <h3 className="text-xl font-bold text-slate-800 mb-6 tracking-tight">Yeni Kullanıcı Hesabı</h3>
+                                <form onSubmit={handleAddUser} className="space-y-5">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tam Adı</label>
+                                        <input
+                                            required
+                                            type="text"
+                                            value={newUser.name}
+                                            onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm transition"
+                                            placeholder="Örn: Ahmet Yılmaz"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">E-Posta Adresi</label>
+                                        <input
+                                            required
+                                            type="email"
+                                            value={newUser.email}
+                                            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm transition"
+                                            placeholder="ahmet@fidanx.com"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Erişim Yetkisi</label>
+                                        <select
+                                            value={newUser.role}
+                                            onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm transition appearance-none bg-slate-50"
+                                        >
+                                            <option value="Admin">Süper Yetkili (Admin)</option>
+                                            <option value="Personel">Saha Personeli</option>
+                                            <option value="Gözlemci">Sadece Görüntüleme</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex gap-4 pt-4">
+                                        <button type="button" onClick={() => setIsUserModalOpen(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition uppercase text-xs tracking-widest">Vazgeç</button>
+                                        <button type="submit" className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-black shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition active:scale-95 uppercase text-xs tracking-widest">Kullanıcıyı Kaydet</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </main>
-        </div>
+                    )
+                }
+            </main >
+        </div >
     );
 }

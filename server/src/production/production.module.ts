@@ -1,11 +1,12 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ProductionController } from './production.controller';
 import { ProductionService } from './production.service';
 import { ActivityModule } from '../activity/activity.module';
 
 @Module({
-  imports: [ActivityModule],
+  imports: [forwardRef(() => ActivityModule)],
   controllers: [ProductionController],
-  providers: [ProductionService]
+  providers: [ProductionService],
+  exports: [ProductionService]
 })
 export class ProductionModule { }

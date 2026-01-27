@@ -10,6 +10,8 @@ export default function Sidebar() {
     const menuItems = [
         { name: 'Kontrol Paneli', path: '/', icon: '📊' },
         { name: 'Üretim Takibi', path: '/uretim', icon: '🚜' },
+        { name: 'Operasyon & Hareket', path: '/hareketler', icon: '🚚' },
+        { name: 'Günlük Bahçe İşleri', path: '/operasyon', icon: '🚜' },
         { name: 'Reçete Yönetimi', path: '/receteler', icon: '🧪' },
         { name: 'Stok Yönetimi', path: '/stoklar', icon: '🌱' },
         { name: 'Satınalma & MRP', path: '/satinalma', icon: '🛒' },
@@ -17,6 +19,7 @@ export default function Sidebar() {
         { name: 'Finans & Giderler', path: '/finans', icon: '💎' },
         { name: 'Maliyet Analizi', path: '/analizler/maliyetler', icon: '📈' },
         { name: 'Ayarlar', path: '/ayarlar', icon: '⚙️' },
+        { name: 'Mobil Tarayıcı', path: '/scanner', icon: '📱' },
     ];
 
     return (

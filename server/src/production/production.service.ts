@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 import { ActivityService } from '../activity/activity.service';
 
@@ -6,6 +6,7 @@ import { ActivityService } from '../activity/activity.service';
 export class ProductionService {
     constructor(
         private firebase: FirebaseService,
+        @Inject(forwardRef(() => ActivityService))
         private activity: ActivityService
     ) { }
 
@@ -19,6 +20,7 @@ export class ProductionService {
             ...data,
             lotId,
             stage: data.stage || 'TEPSİ',
+            location: data.location || 'Depo',
             startDate: data.startDate || new Date(),
             history: data.history || [{ date: new Date(), action: 'Üretim Başlatıldı' }]
         };
@@ -129,6 +131,10 @@ export class ProductionService {
                 history: (data.history || []).map((h: any) => ({
                     ...h,
                     date: h.date?.toDate ? h.date.toDate().toISOString() : h.date
+                })),
+                costHistory: (data.costHistory || []).map((h: any) => ({
+                    ...h,
+                    date: h.date?.toDate ? h.date.toDate().toISOString() : h.date
                 }))
             };
         });
@@ -155,6 +161,10 @@ export class ProductionService {
             ...data,
             startDate: data.startDate?.toDate ? data.startDate.toDate().toISOString() : data.startDate,
             history: (data.history || []).map((h: any) => ({
+                ...h,
+                date: h.date?.toDate ? h.date.toDate().toISOString() : h.date
+            })),
+            costHistory: (data.costHistory || []).map((h: any) => ({
                 ...h,
                 date: h.date?.toDate ? h.date.toDate().toISOString() : h.date
             }))
@@ -196,5 +206,76 @@ export class ProductionService {
         });
 
         return { id, stage };
+    }
+
+    async transferBatch(tenantId: string, id: string, targetLocation: string, note?: string) {
+        const docRef = this.production(tenantId).doc(id);
+        const doc = await docRef.get();
+        if (!doc.exists) throw new NotFoundException('Üretim partisi bulunamadı.');
+        const currentData = doc.data();
+
+        await docRef.update({ location: targetLocation });
+
+        await this.addHistoryLog(tenantId, id, {
+            action: `Konum Değişimi: ${currentData?.location || 'Belirsiz'} -> ${targetLocation}`,
+            note
+        });
+
+        await this.activity.log(tenantId, {
+            action: 'Transfer',
+            title: `${currentData?.lotId} - ${targetLocation} konumuna transfer edildi.`,
+            icon: '🚚',
+            color: 'bg-amber-50 text-amber-600'
+        });
+
+        return { id, location: targetLocation };
+    }
+
+    async distributeOperationCost(tenantId: string, locations: string[], totalCost: number, data: any) {
+        if (!locations || locations.length === 0 || !totalCost || totalCost <= 0) return;
+
+        // 1. İlgili konumlardaki tüm üretimi bul
+        let allBatches: any[] = [];
+        for (const loc of locations) {
+            const snapshot = await this.production(tenantId).where('location', '==', loc).get();
+            snapshot.forEach(doc => allBatches.push({ id: doc.id, ...doc.data() }));
+        }
+
+        if (allBatches.length === 0) return;
+
+        // 2. Toplam fidan sayısını hesapla
+        const totalQuantity = allBatches.reduce((sum, batch) => sum + (Number(batch.quantity) || 0), 0);
+        if (totalQuantity === 0) return;
+
+        // 3. Birim başına düşen maliyeti hesapla
+        const costPerUnit = totalCost / totalQuantity;
+
+        // 4. Her bir parti için maliyeti işle
+        const batchUpdates = allBatches.map(async (batch) => {
+            const batchCost = costPerUnit * (Number(batch.quantity) || 0);
+
+            // Mevcut veriler
+            const currentAccumulated = Number(batch.accumulatedCost) || 0;
+            const currentHistory = Array.isArray(batch.costHistory) ? batch.costHistory : [];
+
+            // Yeni geçmiş kaydı
+            const newHistoryItem = {
+                date: new Date(),
+                amount: batchCost,
+                unitVal: costPerUnit, // O andaki birim maliyet etkisi
+                description: `${data.title || 'Operasyon'} (${data.action})`,
+                type: data.expenseType || 'GENEL',
+                refId: data.id || null // Aktivite ID referansı
+            };
+
+            await this.production(tenantId).doc(batch.id).update({
+                accumulatedCost: currentAccumulated + batchCost,
+                costHistory: [...currentHistory, newHistoryItem]
+            });
+        });
+
+        await Promise.all(batchUpdates);
+
+        return { processedBatches: allBatches.length, totalDistributed: totalCost };
     }
 }

@@ -43,4 +43,12 @@ export class ProductionController {
     ) {
         return this.productionService.addHistoryLog(tenantId, id, body);
     }
+    @Patch('batches/:id/transfer')
+    transferBatch(
+        @Query('tenantId') tenantId: string,
+        @Param('id') id: string,
+        @Body() body: { targetLocation: string; note?: string }
+    ) {
+        return this.productionService.transferBatch(tenantId, id, body.targetLocation, body.note);
+    }
 }

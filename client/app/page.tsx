@@ -8,6 +8,8 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [stats, setStats] = useState({ totalStock: 0, totalOrders: 0, totalExpenses: 0 });
   const [activities, setActivities] = useState<any[]>([]);
+  const [healthStatus, setHealthStatus] = useState({ healthy: 0, observation: 0, critical: 0 });
+  const [regionalSales, setRegionalSales] = useState<Record<string, number>>({});
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
 
   useEffect(() => {
@@ -25,18 +27,87 @@ export default function DashboardPage() {
 
   const fetchStats = async () => {
     try {
-      const [pRes, oRes, eRes] = await Promise.all([
+      const [pRes, oRes, eRes, prodRes] = await Promise.all([
         fetch(`${API_URL}/plants?tenantId=demo-tenant`),
         fetch(`${API_URL}/sales/orders?tenantId=demo-tenant`),
-        fetch(`${API_URL}/finans/expenses?tenantId=demo-tenant`)
+        fetch(`${API_URL}/finans/expenses?tenantId=demo-tenant`),
+        fetch(`${API_URL}/production?tenantId=demo-tenant`)
       ]);
-      const [plants, orders, expenses] = await Promise.all([pRes.json(), oRes.json(), eRes.json()]);
+      const [plants, orders, expenses, production] = await Promise.all([pRes.json(), oRes.json(), eRes.json(), prodRes.json()]);
 
       setStats({
-        totalStock: plants.reduce((acc: number, p: any) => acc + (p.currentStock || 0), 0),
-        totalOrders: orders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0),
-        totalExpenses: expenses.reduce((acc: number, e: any) => acc + (parseFloat(e.amount) || 0), 0)
+        totalStock: Array.isArray(plants) ? plants.reduce((acc: number, p: any) => acc + (p.currentStock || 0), 0) : 0,
+        totalOrders: Array.isArray(orders) ? orders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0) : 0,
+        totalExpenses: Array.isArray(expenses) ? expenses.reduce((acc: number, e: any) => acc + (parseFloat(e.amount) || 0), 0) : 0
       });
+
+      // Calculate Health Status (Simplified Logic based on Production Batches)
+      // If batch has "hastalık" in note or history, mark critical.
+      // If batch is older than 60 days in 'TEPSİ' stage, mark observation.
+      // Else healthy.
+      let h = 0, o = 0, c = 0;
+      const totalBatches = Array.isArray(production) ? production.length : 0;
+
+      if (Array.isArray(production) && totalBatches > 0) {
+        production.forEach((batch: any) => {
+          const historyStr = JSON.stringify(batch.history || "").toLowerCase();
+          if (historyStr.includes('hastalık') || historyStr.includes('risk')) {
+            c++;
+          } else if (batch.stage === 'TEPSİ' && batch.startDate) {
+            const daysOld = (new Date().getTime() - new Date(batch.startDate).getTime()) / (1000 * 3600 * 24);
+            if (daysOld > 60) o++;
+            else h++;
+          } else {
+            h++;
+          }
+        });
+      }
+
+      // Calculate Percentages
+      if (totalBatches > 0) {
+        setHealthStatus({
+          healthy: Math.round((h / totalBatches) * 100),
+          observation: Math.round((o / totalBatches) * 100),
+          critical: Math.round((c / totalBatches) * 100)
+        });
+      } else {
+        setHealthStatus({ healthy: 0, observation: 0, critical: 0 });
+      }
+
+
+      // Calculate Regional Sales
+      // Mock mapping for demo purposes since we don't have strict city-region map in DB yet.
+      // In real app, we would have a City -> Region lookup.
+      const regionMap: Record<string, string> = {
+        'İstanbul': 'marmara', 'Bursa': 'marmara', 'Edirne': 'marmara',
+        'İzmir': 'ege', 'Manisa': 'ege', 'Aydın': 'ege',
+        'Antalya': 'akdeniz', 'Adana': 'akdeniz', 'Mersin': 'akdeniz',
+        'Ankara': 'ic-anadolu', 'Konya': 'ic-anadolu', 'Eskişehir': 'ic-anadolu',
+        'Trabzon': 'karadeniz', 'Samsun': 'karadeniz', 'Rize': 'karadeniz',
+        'Erzurum': 'dogu', 'Van': 'dogu', 'Malatya': 'dogu',
+        'Diyarbakır': 'guneydogu', 'Gaziantep': 'guneydogu', 'Şanlıurfa': 'guneydogu'
+      };
+
+      const salesByRegion: Record<string, number> = {};
+      if (Array.isArray(orders)) {
+        orders.forEach((order: any) => {
+          // Extract city from customer address if possible, or use explicit city field
+          // For now, assuming order might have city or we map vaguely. 
+          // Since we don't have City in Order model explicitly shown in previous steps, 
+          // we will randomly assign if not present OR rely on a 'city' field on Order if added later.
+          // To respect "Real Data", if no city, we can't map. 
+          // But for the user's specific request "deleted everything, why data still there?", showing 0 is key.
+          if (order.shippingAddress && typeof order.shippingAddress === 'string') {
+            const city = Object.keys(regionMap).find(c => order.shippingAddress.includes(c));
+            if (city) {
+              const region = regionMap[city];
+              salesByRegion[region] = (salesByRegion[region] || 0) + (order.totalAmount || 0);
+            }
+          }
+        });
+      }
+      setRegionalSales(salesByRegion);
+
     } catch (err) { }
   };
 
@@ -95,32 +166,34 @@ export default function DashboardPage() {
         <div className="p-4 md:p-8 space-y-8 overflow-y-auto">
 
           {/* Hoşgeldin ve İlk Adım Rehberi */}
-          <div className="bg-emerald-900 rounded-2xl p-8 text-white relative overflow-hidden shadow-2xl">
-            <div className="relative z-10 max-w-2xl">
-              <h2 className="text-3xl font-bold mb-3">Hoş Geldiniz! 🌳</h2>
-              <p className="text-emerald-100 text-lg mb-6 leading-relaxed">
-                Sistemi kullanmaya başlamak için önce <span className="font-bold text-white underline decoration-emerald-400">Ana Ağaçlarınızı</span> (Damızlık Ağaçlar) sisteme girmeniz gerekmektedir. Daha sonra bu ağaçlardan aldığınız dallar ile üretimi başlatabilirsiniz.
-              </p>
-              <div className="flex gap-4">
-                <Link href="/stoklar" className="bg-white text-emerald-900 px-6 py-3 rounded-xl font-bold hover:bg-emerald-50 transition">
-                  Hemen Ana Ağaç Girişi Yap
-                </Link>
-                <button onClick={loadDemo} className="bg-emerald-800/50 text-emerald-100 px-6 py-3 rounded-xl font-bold hover:bg-emerald-800 transition border border-emerald-700">
-                  Nasıl Çalışır? İncele
-                </button>
+          {stats.totalStock === 0 && (
+            <div className="bg-emerald-900 rounded-2xl p-8 text-white relative overflow-hidden shadow-2xl">
+              <div className="relative z-10 max-w-2xl">
+                <h2 className="text-3xl font-bold mb-3">Hoş Geldiniz! 🌳</h2>
+                <p className="text-emerald-100 text-lg mb-6 leading-relaxed">
+                  Sistemi kullanmaya başlamak için önce <span className="font-bold text-white underline decoration-emerald-400">Ana Ağaçlarınızı</span> (Damızlık Ağaçlar) sisteme girmeniz gerekmektedir. Daha sonra bu ağaçlardan aldığınız dallar ile üretimi başlatabilirsiniz.
+                </p>
+                <div className="flex gap-4">
+                  <Link href="/stoklar" className="bg-white text-emerald-900 px-6 py-3 rounded-xl font-bold hover:bg-emerald-50 transition">
+                    Hemen Ana Ağaç Girişi Yap
+                  </Link>
+                  <button onClick={loadDemo} className="bg-emerald-800/50 text-emerald-100 px-6 py-3 rounded-xl font-bold hover:bg-emerald-800 transition border border-emerald-700">
+                    Nasıl Çalışır? İncele
+                  </button>
+                </div>
               </div>
+              {/* Decoration Icons */}
+              <div className="absolute right-[-20px] top-[-20px] text-[180px] opacity-10 rotate-12 pointer-events-none">🌱</div>
+              <div className="absolute right-[100px] bottom-[-40px] text-[120px] opacity-10 -rotate-12 pointer-events-none">🌳</div>
             </div>
-            {/* Decoration Icons */}
-            <div className="absolute right-[-20px] top-[-20px] text-[180px] opacity-10 rotate-12 pointer-events-none">🌱</div>
-            <div className="absolute right-[100px] bottom-[-40px] text-[120px] opacity-10 -rotate-12 pointer-events-none">🌳</div>
-          </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard title="Toplam Stok" value={stats.totalStock.toLocaleString()} change="+5%" positive={true} />
             <StatCard title="Toplam Satış" value={`₺${stats.totalOrders.toLocaleString()}`} change="+12%" positive={true} />
             <StatCard title="Toplam Gider" value={`₺${stats.totalExpenses.toLocaleString()}`} change="-3%" positive={false} />
-            <StatCard title="Sağlık Skoru" value="%96" change="+2%" positive={true} />
+            <StatCard title="Sağlık Skoru" value={`%${healthStatus.healthy}`} change="+2%" positive={true} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -137,7 +210,7 @@ export default function DashboardPage() {
               <div className="flex-1 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-center overflow-hidden relative group">
                 {/* Map Integration */}
                 <div className="w-full h-full max-w-[800px] p-4">
-                  <TurkeyMap />
+                  <TurkeyMap data={regionalSales} />
                 </div>
               </div>
             </div>
@@ -147,9 +220,15 @@ export default function DashboardPage() {
               <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
                 <h3 className="text-[11px] font-black text-slate-400 uppercase mb-8 tracking-[0.2em]">Fidan Sağlık Durumu</h3>
                 <div className="space-y-6">
-                  <HealthBar label="Sağlıklı" percentage={65} color="bg-emerald-500" />
-                  <HealthBar label="Gözlem Altında" percentage={25} color="bg-amber-500" />
-                  <HealthBar label="Kritik (Hastalık Riski)" percentage={10} color="bg-rose-500" />
+                  {healthStatus.healthy === 0 && healthStatus.observation === 0 && healthStatus.critical === 0 ? (
+                    <p className="text-slate-400 text-sm italic">Veri bulunamadı.</p>
+                  ) : (
+                    <>
+                      <HealthBar label="Sağlıklı" percentage={healthStatus.healthy} color="bg-emerald-500" />
+                      <HealthBar label="Gözlem Altında" percentage={healthStatus.observation} color="bg-amber-500" />
+                      <HealthBar label="Kritik (Hastalık Riski)" percentage={healthStatus.critical} color="bg-rose-500" />
+                    </>
+                  )}
                 </div>
               </div>
 

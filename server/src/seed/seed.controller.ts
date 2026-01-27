@@ -45,35 +45,41 @@ export class SeedController {
         const mt2 = await plantsRef.add({ name: 'Chandler Ceviz (Damızlık-01)', type: 'MOTHER_TREE', sku: 'AN-CV-01', active: true });
         const mt3 = await plantsRef.add({ name: 'Gemlik Zeytin (Damızlık-B)', type: 'MOTHER_TREE', sku: 'AN-ZY-B', active: true });
 
-        // 3. Reçeteler (Recipes)
+        // 3. Reçeteler (Recipes) & Materials Linked by ID
         const r1 = await recipeRef.add({
             name: 'Zeytin Çelikleme Karışımı',
+            description: 'Standart köklendirme ortamı',
             items: [
-                { materialId: rm1.id, amount: 0.05 },
-                { materialId: rm2.id, amount: 0.01 },
-                { materialId: rm4.id, amount: 0.002 }
+                { materialId: rm1.id, name: 'Klasmann TS1 Torf', amount: 0.05, unit: 'Torba' },
+                { materialId: rm2.id, name: 'İthal Perlit', amount: 0.01, unit: 'Torba' },
+                { materialId: rm4.id, name: 'Osmocote Gübre', amount: 0.002, unit: 'Kg' }
             ],
-            instructions: 'Hormon uygulaması sonrası dikim yapın.',
             category: 'Başlangıç'
         });
 
         const r2 = await recipeRef.add({
             name: 'Saksılı Gelişim Reçetesi',
+            description: 'Saksı büyütme harcı',
             items: [
-                { materialId: rm1.id, amount: 0.1 },
-                { materialId: rm3.id, amount: 1 },
-                { materialId: rm4.id, amount: 0.005 },
-                { materialId: rm5.id, amount: 1 }
+                { materialId: rm1.id, name: 'Klasmann TS1 Torf', amount: 0.1, unit: 'Torba' },
+                { materialId: rm3.id, name: '17\'lik Saksı', amount: 1, unit: 'Adet' },
+                { materialId: rm5.id, name: 'Destek Çubuğu', amount: 1, unit: 'Adet' }
             ],
             category: 'Gelişim'
         });
 
-        // 4. Müşteriler (Customers)
-        const c1 = await custRef.add({ name: 'Bereket Tarım İşletmeleri', phone: '0532 000 00 01', email: 'info@bereket.com', address: 'Antalya, Serik', note: 'Kurumsal müşteri.' });
-        const c2 = await custRef.add({ name: 'Yılmaz Fidancılık ve Peyzaj', phone: '0544 111 22 33', address: 'Muğla, Bodrum', note: 'Proje bazlı çalışır.' });
-        const c3 = await custRef.add({ name: 'Ege Fidan Pazarı', phone: '0232 444 55 66', address: 'İzmir, Ödemiş', note: 'Toptan alıcı.' });
+        // 4. Müşteriler (Customers) - Regional Addresses for Map Analysis
+        const c1 = await custRef.add({ name: 'Bereket Tarım', phone: '0532 000 00 01', email: 'info@bereket.com', address: 'Serik, Antalya', region: 'Akdeniz', note: 'Kurumsal müşteri.' });
+        const c2 = await custRef.add({ name: 'Yılmaz Fidancılık', phone: '0544 111 22 33', address: 'Bodrum, Muğla', region: 'Ege', note: 'Proje bazlı.' });
+        const c3 = await custRef.add({ name: 'Anadolu Peyzaj', phone: '0505 123 45 67', address: 'Çankaya, Ankara', region: 'İç Anadolu', note: 'Kamu ihaleleri.' });
+        const c4 = await custRef.add({ name: 'Marmara Botanik', phone: '0533 999 88 77', address: 'Nilüfer, Bursa', region: 'Marmara', note: 'Büyük ölçekli alıcı.' });
+        const c5 = await custRef.add({ name: 'Karadeniz Orman Ürünleri', phone: '0462 333 22 11', address: 'Ortahisar, Trabzon', region: 'Karadeniz', note: 'Fidanlık.' });
 
-        // 5. Üretim Partileri (Production Batches)
+        // 5. Üretim Partileri (Production Batches) with Health Status & Cost History
+        const d_now = new Date();
+        const d_old = new Date(); d_old.setMonth(d_old.getMonth() - 6);
+
+        // Batch 1: Sağlıklı, Maliyetli
         const b1Id = `LOT-2024-ZY-001`;
         const b1 = await prodRef.add({
             lotId: b1Id,
@@ -81,80 +87,94 @@ export class SeedController {
             plantName: 'Ayvalık Zeytin - 1 Yaş',
             quantity: 5000,
             stage: 'TEPSİ',
+            location: 'Sera A',
+            subLocation: 'Masa 1-5',
             startDate: new Date(),
             motherTreeId: mt1.id,
             recipeId: r1.id,
-            history: [{ date: new Date(), action: 'Üretim Başlatıldı', note: 'Çelikler dikildi.' }]
-        });
-
-        const d2 = new Date(); d2.setMonth(d2.getMonth() - 8);
-        const b2Id = `LOT-2023-CV-042`;
-        const b2 = await prodRef.add({
-            lotId: b2Id,
-            name: 'Chandler Gelişim',
-            plantName: 'Chandler Ceviz - Gelişim Grubu',
-            quantity: 1200,
-            stage: 'KÜÇÜK_SAKSI',
-            startDate: d2,
-            motherTreeId: mt2.id,
-            recipeId: r2.id,
+            accumulatedCost: 12500, // Initial cost
             history: [
-                { date: d2, action: 'Üretim Başlatıldı' },
-                { date: new Date(d2.getTime() + 90 * 86400000), action: 'Saksıya Geçiş' }
+                { date: new Date(), action: 'Üretim Başlatıldı', note: 'Çelikler dikildi.' },
+                { date: new Date(), amount: 12500, unitVal: 2.5, description: 'Başlangıç Materyali ve İşçilik', type: 'MALZEME' }
+            ],
+            costHistory: [
+                { date: new Date(), amount: 12500, unitVal: 2.5, description: 'Başlangıç Materyali ve İşçilik', type: 'MALZEME' }
             ]
         });
 
-        const b3Id = `LOT-2024-ZY-005`;
+        // Batch 2: Kritik (Hastalık Riski)
+        const b2Id = `LOT-2023-CV-042`;
+        const b2 = await prodRef.add({
+            lotId: b2Id,
+            name: 'Chandler Ceviz - Riskli Grup',
+            plantName: 'Chandler Ceviz - 2 Yaş',
+            quantity: 1200,
+            stage: 'TEPSİ', // Uzun süre tepside kalmış -> Gözlem/Risk
+            location: 'Karantina Bölgesi',
+            startDate: d_old,
+            motherTreeId: mt2.id,
+            recipeId: r2.id,
+            accumulatedCost: 45000,
+            history: [
+                { date: d_old, action: 'Üretim Başlatıldı' },
+                { date: new Date(), action: 'Kontrol', note: 'Yapraklarda sararma tespit edildi. Kök çürüklüğü riski.' } // Keyword for health status logic
+            ],
+            costHistory: [
+                { date: d_old, amount: 20000, unitVal: 16.6, description: 'Tohum Maliyeti', type: 'MALZEME' },
+                { date: new Date(), amount: 25000, unitVal: 20.8, description: 'İlaçlama ve Bakım', type: 'BAKIM' }
+            ]
+        });
+
+        // Batch 3: Sağlıklı
         const b3 = await prodRef.add({
-            lotId: b3Id,
-            name: 'Gemlik Dikim',
-            plantName: 'Gemlik Zeytin - Yeni Dikim',
-            quantity: 3000,
-            stage: 'TEPSİ',
+            lotId: 'LOT-2024-DEFNE-11',
+            name: 'Defne Fidanı',
+            quantity: 8000,
+            stage: 'KÜÇÜK_SAKSI',
+            location: 'Açık Alan 2',
             startDate: new Date(),
-            motherTreeId: mt3.id,
-            recipeId: r1.id,
-            history: [{ date: new Date(), action: 'Üretim Başlatıldı' }]
+            accumulatedCost: 32000,
+            costHistory: [{ date: new Date(), amount: 32000, unitVal: 4, description: 'Saksılama Maliyeti', type: 'İŞÇİLİK' }]
         });
 
-        // 6. Siparişler (Orders)
-        await orderRef.add({
-            customerId: c1.id,
-            customerName: 'Bereket Tarım İşletmeleri',
-            totalAmount: 125000,
-            status: 'COMPLETED',
-            date: d2,
-            items: [{ name: 'Aşılanmış Zeytin (2 Yaş)', qty: 1000, price: 125 }]
+        // Batch 4: Gözlem Altında (Uzun Süre)
+        const d_mid = new Date(); d_mid.setDate(d_mid.getDate() - 75);
+        const b4 = await prodRef.add({
+            lotId: 'LOT-OBS-099',
+            name: 'Altın Çanak',
+            quantity: 2500,
+            stage: 'TEPSİ',
+            startDate: d_mid, // > 60 days in Tray -> Observation
+            accumulatedCost: 5000,
+            costHistory: []
         });
 
-        await orderRef.add({
-            customerId: c2.id,
-            customerName: 'Yılmaz Fidancılık ve Peyzaj',
-            totalAmount: 42000,
-            status: 'PENDING',
-            date: new Date(),
-            items: [{ name: 'Chandler Ceviz', qty: 300, price: 140 }]
-        });
 
-        // 7. Giderler (Expenses) - Maliyet Analizi İçin Kritik
+        // 6. Siparişler (Orders) - Mapping to Regions via Address
+        await orderRef.add({ customerId: c1.id, customerName: 'Bereket Tarım', totalAmount: 125000, status: 'COMPLETED', date: d_old, shippingAddress: 'Serik, Antalya', items: [{ name: 'Aşılanmış Zeytin', qty: 1000, price: 125 }] });
+        await orderRef.add({ customerId: c2.id, customerName: 'Yılmaz Fidancılık', totalAmount: 42000, status: 'PENDING', date: new Date(), shippingAddress: 'Bodrum, Muğla', items: [{ name: 'Ceviz', qty: 300, price: 140 }] });
+        await orderRef.add({ customerId: c4.id, customerName: 'Marmara Botanik', totalAmount: 280000, status: 'SHIPPED', date: new Date(), shippingAddress: 'Bursa, Nilüfer', items: [{ name: 'Mazı', qty: 2000, price: 140 }] });
+        await orderRef.add({ customerId: c3.id, customerName: 'Anadolu Peyzaj', totalAmount: 85000, status: 'COMPLETED', date: new Date(), shippingAddress: 'Çankaya, Ankara', items: [{ name: 'Çam Fidanı', qty: 500, price: 170 }] });
+        await orderRef.add({ customerId: c5.id, customerName: 'Karadeniz Orman', totalAmount: 64000, status: 'COMPLETED', date: new Date(), shippingAddress: 'Trabzon, Merkez', items: [{ name: 'Ladin', qty: 400, price: 160 }] });
+
+
+        // 7. Giderler (Expenses)
         await expRef.add({ title: 'Ocak Ayı Personel Maaşları', category: 'Personel', amount: 145000, date: new Date() });
-        await expRef.add({ title: 'Güneş Paneli Bakım Gideri', category: 'Bakım', amount: 8500, date: new Date() });
-        await expRef.add({ title: 'ZY-001 Köklendirme Hormonu', category: 'İlaç/Gübre', amount: 4500, batchId: b1.id, date: new Date() });
-        await expRef.add({ title: 'CV-042 Budama İşçiliği', category: 'Personel', amount: 6000, batchId: b2.id, date: d2 });
-        await expRef.add({ title: 'ZY-005 Toprak Karışımı Nakliye', category: 'Lojistik', amount: 12000, batchId: b3.id, date: new Date() });
+        await expRef.add({ title: 'Sera Isıtma Gideri (Doğalgaz)', category: 'Enerji', amount: 32000, date: new Date() });
+        await expRef.add({ title: 'Damlama Sulama Boruları', category: 'Demirbaş', amount: 15000, date: new Date() });
 
         // 8. Aktivite Kayıtları
         const activities = [
             { date: new Date(), action: 'Yeni Sipariş', title: 'Yılmaz Fidancılık - 300 adet Ceviz', icon: '💰', color: 'bg-emerald-50 text-emerald-600' },
-            { date: new Date(Date.now() - 1000000), action: 'MRP Analizi', title: 'ZY-001 için 250 torba torf ihtiyacı', icon: '📈', color: 'bg-blue-50 text-blue-600' },
-            { date: new Date(Date.now() - 5000000), action: 'Üretim Güncelleme', title: 'LOT-2023-CV-042 -> ORTA_SAKSI', icon: '🌱', color: 'bg-amber-50 text-amber-600' },
-            { date: d2, action: 'Satış Tamamlandı', title: 'Bereket Tarım - 1000 adet Zeytin', icon: '🚚', color: 'bg-purple-50 text-purple-600' }
+            { date: new Date(Date.now() - 3600000), action: 'Maliyet Girişi', title: 'Sera A İlaçlama - 450 TL/Parti', icon: '💵', color: 'bg-rose-50 text-rose-600' },
+            { date: new Date(Date.now() - 7200000), action: 'Üretim Transfer', title: 'LOT-2024-ZY-001 -> Sera A', icon: '🚛', color: 'bg-blue-50 text-blue-600' },
+            { date: new Date(Date.now() - 86400000), action: 'Sağlık Uyarısı', title: 'Karantina Bölgesinde riskli yapraklar', icon: '⚠️', color: 'bg-amber-50 text-amber-600' }
         ];
         for (const act of activities) {
             await activityRef.add(act);
         }
 
-        return { message: `${tenantId} için genişletilmiş ERP/MRP/Maliyet demo verileri başarıyla oluşturuldu.` };
+        return { message: `${tenantId} demo verileri (Bölgesel Satışlar, Sağlık Analizleri, Maliyet Geçmişi) ile güncellendi.` };
     }
 
     @Delete('clear')

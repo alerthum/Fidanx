@@ -19,6 +19,7 @@ interface Plant {
     currentStock?: number;
     wholesalePrice?: number;
     retailPrice?: number;
+    criticalStock?: number;
     createdAt: string;
 }
 
@@ -40,7 +41,8 @@ export default function StoklarPage() {
         dimensions: '',
         currentStock: 0,
         wholesalePrice: 0,
-        retailPrice: 0
+        retailPrice: 0,
+        criticalStock: 10 // Default critical stock
     });
 
     const [error, setError] = useState<string | null>(null);
@@ -71,17 +73,51 @@ export default function StoklarPage() {
         }
     };
 
+    const [isEditing, setIsEditing] = useState(false);
+    const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
+
+    const handleEditPlant = (plant: Plant) => {
+        setNewPlant({
+            name: plant.name,
+            category: plant.category || '',
+            sku: plant.sku || '',
+            kod1: plant.kod1 || '',
+            kod2: plant.kod2 || '',
+            kod3: plant.kod3 || '',
+            kod4: plant.kod4 || '',
+            kod5: plant.kod5 || '',
+            type: plant.type || 'CUTTING',
+            volume: plant.volume || '',
+            dimensions: plant.dimensions || '',
+            currentStock: plant.currentStock || 0,
+            wholesalePrice: plant.wholesalePrice || 0,
+            retailPrice: plant.retailPrice || 0,
+            criticalStock: plant.criticalStock || 10
+        });
+        setSelectedPlantId(plant.id);
+        setIsEditing(true);
+        setIsModalOpen(true);
+    };
+
     const handleAddPlant = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch(`${API_URL}/plants?tenantId=demo-tenant`, {
-                method: 'POST',
+            const url = isEditing
+                ? `${API_URL}/plants/${selectedPlantId}?tenantId=demo-tenant`
+                : `${API_URL}/plants?tenantId=demo-tenant`;
+
+            const method = isEditing ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPlant),
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0, wholesalePrice: 0, retailPrice: 0 });
+                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0, wholesalePrice: 0, retailPrice: 0, criticalStock: 10 });
+                setIsEditing(false);
+                setSelectedPlantId(null);
                 fetchPlants();
             }
         } catch (err) {
@@ -101,7 +137,11 @@ export default function StoklarPage() {
                     <div className="flex gap-3 w-full sm:w-auto">
                         <ExportButton title="Mevcut Stok Durumu" tableId="stok-table" />
                         <button
-                            onClick={() => setIsModalOpen(true)}
+                            onClick={() => {
+                                setIsEditing(false);
+                                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0, wholesalePrice: 0, retailPrice: 0, criticalStock: 10 });
+                                setIsModalOpen(true);
+                            }}
                             className="flex-1 sm:flex-none bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition active:scale-95"
                         >
                             + Yeni Stok Ekle
@@ -167,7 +207,16 @@ export default function StoklarPage() {
                                                 <p className="text-[10px] text-slate-400 font-mono tracking-tighter uppercase">{plant.sku || 'SKU-YOK'}</p>
                                             </td>
                                             <td className="px-6 py-4 text-center">
-                                                <span className="font-bold text-slate-700">{plant.currentStock !== undefined ? plant.currentStock : '-'}</span>
+                                                <div className="flex flex-col items-center">
+                                                    <span className={`font-bold ${(plant.currentStock || 0) <= (plant.criticalStock || 10) ? 'text-rose-600' : 'text-slate-700'}`}>
+                                                        {plant.currentStock !== undefined ? plant.currentStock : '-'}
+                                                    </span>
+                                                    {(plant.currentStock || 0) <= (plant.criticalStock || 10) && (
+                                                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-tight bg-rose-50 px-1.5 py-0.5 rounded mt-0.5 border border-rose-100 flex items-center gap-1">
+                                                            <span>⚠️</span> Kritik ({plant.criticalStock || 10})
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex justify-center gap-1">
@@ -186,7 +235,12 @@ export default function StoklarPage() {
                                                     >
                                                         BARKOD
                                                     </button>
-                                                    <button className="bg-slate-50 text-slate-400 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded text-[10px] font-black uppercase transition-all">DÜZENLE</button>
+                                                    <button
+                                                        onClick={() => handleEditPlant(plant)}
+                                                        className="bg-slate-50 text-slate-400 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded text-[10px] font-black uppercase transition-all"
+                                                    >
+                                                        DÜZENLE
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -218,7 +272,7 @@ export default function StoklarPage() {
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto border border-slate-200">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold text-slate-800">Yeni Stok Kaydı</h3>
+                                <h3 className="text-xl font-bold text-slate-800">{isEditing ? 'Stok Düzenle' : 'Yeni Stok Kaydı'}</h3>
                                 <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl transition">×</button>
                             </div>
 
@@ -297,6 +351,16 @@ export default function StoklarPage() {
                                             onChange={(e) => setNewPlant({ ...newPlant, retailPrice: parseFloat(e.target.value) || 0 })}
                                             className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm shadow-sm transition"
                                             placeholder="0.00"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-bold text-rose-500 uppercase mb-1.5 tracking-wider">Kritik Stok Seviyesi (Bildirim)</label>
+                                        <input
+                                            type="number"
+                                            value={newPlant.criticalStock}
+                                            onChange={(e) => setNewPlant({ ...newPlant, criticalStock: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-4 py-3 rounded-lg border border-rose-200 bg-rose-50/30 outline-none focus:border-rose-500 text-sm shadow-sm transition"
+                                            placeholder="10"
                                         />
                                     </div>
                                 </div>

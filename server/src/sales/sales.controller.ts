@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
 import { SalesService } from './sales.service';
 
 @Controller('sales')
@@ -24,6 +24,16 @@ export class SalesController {
     async createOrder(@Query('tenantId') tenantId: string, @Body() data: any) {
         return this.salesService.createOrder(tenantId, data);
     }
+
+    @Post('orders/:id/status')
+    async updateOrderStatus(
+        @Query('tenantId') tenantId: string,
+        @Body('status') status: string,
+        @Param('id') id: string
+    ) {
+        return this.salesService.updateOrderStatus(tenantId, id, status);
+    }
+
 
     @Post('invoices')
     async createInvoice(@Query('tenantId') tenantId: string, @Body() data: any) {
