@@ -78,10 +78,10 @@ export default function FinansPage() {
     // Merge transactions for timeline list
     const transactions = [
         ...sales.filter(s => s.status === 'Tamamlandı').map(s => ({
-            id: s.id, type: 'income', date: s.orderDate, amount: s.totalAmount, label: `Satış: ${s.customerName}`, category: 'Satış Geliri'
+            id: s.id, type: 'income', date: s.orderDate, amount: s.totalAmount, label: `Satış: ${s.customerName}`, category: 'Satış Geliri', isDeletable: false
         })),
         ...purchases.filter(p => p.status === 'Tamamlandı').map(p => ({
-            id: p.id, type: 'expense', date: p.orderDate, amount: p.totalCost, label: `Satınalma: ${p.supplier}`, category: 'Hammadde'
+            id: p.id, type: 'expense', date: p.orderDate, amount: p.totalCost, label: `Satınalma: ${p.supplier}`, category: 'Hammadde', isDeletable: false
         })),
         ...expenses.map(e => ({
             id: e.id, type: 'expense', date: e.date, amount: e.amount, label: e.description, category: e.category, isDeletable: true
