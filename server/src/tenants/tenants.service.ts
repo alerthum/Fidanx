@@ -44,4 +44,14 @@ export class TenantsService {
         await this.tenants.doc(id).set({ settings }, { merge: true });
         return { success: true };
     }
+
+    async update(id: string, data: any) {
+        await this.tenants.doc(id).update(data);
+        return { id, ...data };
+    }
+
+    async remove(id: string) {
+        await this.tenants.doc(id).delete();
+        return { success: true };
+    }
 }

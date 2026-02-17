@@ -1,0 +1,593 @@
+"use client";
+import React, { useState, useEffect } from 'react';
+import Sidebar from '@/components/Sidebar';
+import ExportButton from '@/components/ExportButton';
+
+export default function RaporlarPage() {
+    const [plants, setPlants] = useState<any[]>([]);
+    const [production, setProduction] = useState<any[]>([]);
+    const [expenses, setExpenses] = useState<any[]>([]);
+    const [sales, setSales] = useState<any[]>([]);
+    const [purchases, setPurchases] = useState<any[]>([]);
+    const [fertilizerLogs, setFertilizerLogs] = useState<any[]>([]);
+    const [temperatureLogs, setTemperatureLogs] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [activeSection, setActiveSection] = useState<'overview' | 'monthly' | 'cost' | 'operations'>('overview');
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
+
+    useEffect(() => {
+        fetchAllData();
+    }, []);
+
+    const fetchAllData = async () => {
+        setIsLoading(true);
+        try {
+            const [pRes, prodRes, expRes, sRes, purchRes, fertRes, tempRes] = await Promise.all([
+                fetch(`${API_URL}/plants?tenantId=demo-tenant`),
+                fetch(`${API_URL}/production/batches?tenantId=demo-tenant`),
+                fetch(`${API_URL}/finans/expenses?tenantId=demo-tenant`),
+                fetch(`${API_URL}/sales/orders?tenantId=demo-tenant`),
+                fetch(`${API_URL}/purchases?tenantId=demo-tenant`),
+                fetch(`${API_URL}/production/fertilizer-logs?tenantId=demo-tenant`).catch(() => ({ ok: false })),
+                fetch(`${API_URL}/production/temperature-logs?tenantId=demo-tenant`).catch(() => ({ ok: false }))
+            ]);
+
+            if (pRes.ok) setPlants(await pRes.json());
+            if (prodRes.ok) setProduction(await prodRes.json());
+            if (expRes.ok) setExpenses(await expRes.json());
+            if (sRes.ok) setSales(await sRes.json());
+            if (purchRes.ok) setPurchases(await purchRes.json());
+            if ('json' in fertRes && fertRes.ok) setFertilizerLogs(await fertRes.json());
+            if ('json' in tempRes && tempRes.ok) setTemperatureLogs(await tempRes.json());
+        } catch (err) {
+            console.error('Rapor verileri yüklenemedi:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Calculations
+    const totalStock = plants.reduce((sum, p) => sum + (p.currentStock || 0), 0);
+    const totalBatches = production.length;
+    const totalCuttings = production.reduce((sum, b) => sum + (b.quantity || 0), 0);
+    const totalSalesIncome = sales.filter(s => s.status === 'Tamamlandı').reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+    const totalPurchaseCost = purchases.filter(p => p.status === 'Tamamlandı').reduce((sum, p) => sum + (p.totalCost || 0), 0);
+    const totalOperatingExpense = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const totalExpense = totalPurchaseCost + totalOperatingExpense;
+    const netProfit = totalSalesIncome - totalExpense;
+
+    // Monthly breakdown
+    const getMonthlyData = () => {
+        const months: Record<string, { income: number, expense: number }> = {};
+        sales.filter(s => s.status === 'Tamamlandı').forEach(s => {
+            const month = new Date(s.orderDate).toLocaleDateString('tr-TR', { year: 'numeric', month: 'short' });
+            if (!months[month]) months[month] = { income: 0, expense: 0 };
+            months[month].income += s.totalAmount || 0;
+        });
+        expenses.forEach(e => {
+            const month = new Date(e.date).toLocaleDateString('tr-TR', { year: 'numeric', month: 'short' });
+            if (!months[month]) months[month] = { income: 0, expense: 0 };
+            months[month].expense += Number(e.amount) || 0;
+        });
+        purchases.filter(p => p.status === 'Tamamlandı').forEach(p => {
+            const month = new Date(p.orderDate).toLocaleDateString('tr-TR', { year: 'numeric', month: 'short' });
+            if (!months[month]) months[month] = { income: 0, expense: 0 };
+            months[month].expense += p.totalCost || 0;
+        });
+        return Object.entries(months).sort((a, b) => a[0].localeCompare(b[0]));
+    };
+
+    // Expense categories
+    const getExpenseByCategory = () => {
+        const cats: Record<string, number> = {};
+        expenses.forEach(e => {
+            const cat = e.category || 'Diğer';
+            cats[cat] = (cats[cat] || 0) + (Number(e.amount) || 0);
+        });
+        return Object.entries(cats).sort((a, b) => b[1] - a[1]);
+    };
+
+    // Plant cost analysis from production batches
+    const getPlantCosts = () => {
+        return production
+            .filter(b => b.quantity > 0)
+            .map(b => ({
+                name: b.name || b.plantName || 'İsimsiz',
+                lotId: b.lotId,
+                quantity: b.quantity,
+                totalCost: b.accumulatedCost || 0,
+                unitCost: b.quantity > 0 ? (b.accumulatedCost || 0) / b.quantity : 0,
+                location: b.location || 'Belirsiz',
+                stage: b.stage || '-'
+            }))
+            .sort((a, b) => b.unitCost - a.unitCost);
+    };
+
+    const monthlyData = getMonthlyData();
+    const expenseCategories = getExpenseByCategory();
+    const plantCosts = getPlantCosts();
+    const maxMonthlyValue = Math.max(...monthlyData.map(([, d]) => Math.max(d.income, d.expense)), 1);
+
+    const tabs = [
+        { id: 'overview' as const, label: 'Genel Durum', icon: '📊' },
+        { id: 'monthly' as const, label: 'Aylık Rapor', icon: '📅' },
+        { id: 'cost' as const, label: 'Maliyet Analizi', icon: '💰' },
+        { id: 'operations' as const, label: 'Operasyonlar', icon: '🌡️' },
+    ];
+
+    return (
+        <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8fafc] font-sans">
+            <Sidebar />
+            <main className="flex-1 min-w-0">
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center sticky top-0 z-30 shadow-sm gap-4">
+                    <div>
+                        <h1 className="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Gelişmiş Raporlar</h1>
+                        <p className="text-xs lg:text-sm text-slate-500">İşletmenizin tüm verilerini tek ekrandan inceleyin.</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <ExportButton title="Genel Rapor" tableId="report-table" />
+                        <button onClick={fetchAllData} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition active:scale-95">
+                            🔄 Yenile
+                        </button>
+                    </div>
+                </header>
+
+                {/* Tab Navigation */}
+                <div className="px-4 lg:px-8 pt-6">
+                    <div className="flex bg-white rounded-2xl border border-slate-200 p-1.5 shadow-sm overflow-x-auto">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveSection(tab.id)}
+                                className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition whitespace-nowrap ${activeSection === tab.id
+                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200'
+                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <span className="text-base">{tab.icon}</span>
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="p-4 lg:p-8 space-y-8">
+                    {isLoading ? (
+                        <div className="py-24 text-center">
+                            <div className="inline-block w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-slate-400 mt-4 font-bold text-[10px] uppercase tracking-widest">Rapor Verileri Yükleniyor...</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* ===================== OVERVIEW ===================== */}
+                            {activeSection === 'overview' && (
+                                <div className="space-y-8">
+                                    {/* KPI Cards */}
+                                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+                                        <KPICard icon="🌱" label="Toplam Stok" value={totalStock.toLocaleString()} color="emerald" />
+                                        <KPICard icon="🧪" label="Üretim Partisi" value={totalBatches.toString()} color="blue" />
+                                        <KPICard icon="🌿" label="Toplam Çelik" value={totalCuttings.toLocaleString()} color="teal" />
+                                        <KPICard icon="💰" label="Satış Geliri" value={`₺${totalSalesIncome.toLocaleString('tr-TR')}`} color="emerald" />
+                                        <KPICard icon="📉" label="Toplam Gider" value={`₺${totalExpense.toLocaleString('tr-TR')}`} color="rose" />
+                                        <KPICard icon={netProfit >= 0 ? "🎉" : "⚠️"} label="Net Kar/Zarar" value={`₺${netProfit.toLocaleString('tr-TR')}`} color={netProfit >= 0 ? "blue" : "amber"} />
+                                    </div>
+
+                                    {/* Stock by Type */}
+                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Stok Dağılımı (Tür Bazında)</h3>
+                                            <div className="space-y-3">
+                                                {['MOTHER_TREE', 'CUTTING', 'RAW_MATERIAL', 'PACKAGING'].map(type => {
+                                                    const items = plants.filter(p => p.type === type);
+                                                    const total = items.reduce((s, p) => s + (p.currentStock || 0), 0);
+                                                    const labels: Record<string, string> = { MOTHER_TREE: '🌳 Ana Ağaç', CUTTING: '🌱 Üretim Materyali', RAW_MATERIAL: '🧱 Hammadde', PACKAGING: '📦 Ambalaj' };
+                                                    return (
+                                                        <div key={type} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                                                            <span className="text-sm font-bold text-slate-600">{labels[type] || type}</span>
+                                                            <div className="text-right">
+                                                                <span className="font-bold text-slate-800">{total.toLocaleString()}</span>
+                                                                <span className="text-[10px] text-slate-400 ml-1">({items.length} çeşit)</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Gider Dağılımı (Kategori)</h3>
+                                            <div className="space-y-3">
+                                                {expenseCategories.length === 0 ? (
+                                                    <p className="text-slate-400 italic text-sm text-center py-6">Gider kaydı yok.</p>
+                                                ) : (
+                                                    expenseCategories.map(([cat, amount]) => {
+                                                        const maxCat = expenseCategories[0][1];
+                                                        const pct = maxCat > 0 ? (amount / maxCat) * 100 : 0;
+                                                        return (
+                                                            <div key={cat}>
+                                                                <div className="flex justify-between text-sm mb-1">
+                                                                    <span className="font-bold text-slate-600">{cat}</span>
+                                                                    <span className="font-bold text-rose-600">₺{amount.toLocaleString('tr-TR')}</span>
+                                                                </div>
+                                                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div className="h-full bg-gradient-to-r from-rose-400 to-rose-600 rounded-full transition-all duration-700" style={{ width: `${pct}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Tedarikçi Özet */}
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Tedarikçi Sipariş Özeti</h3>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm" id="report-table">
+                                                <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                                    <tr>
+                                                        <th className="px-4 py-3">Tedarikçi</th>
+                                                        <th className="px-4 py-3 text-center">Sipariş Sayısı</th>
+                                                        <th className="px-4 py-3 text-center">Tamamlanan</th>
+                                                        <th className="px-4 py-3 text-right">Toplam Tutar</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {(() => {
+                                                        const suppliers: Record<string, { count: number, completed: number, total: number }> = {};
+                                                        purchases.forEach(p => {
+                                                            const s = p.supplier || 'Bilinmeyen';
+                                                            if (!suppliers[s]) suppliers[s] = { count: 0, completed: 0, total: 0 };
+                                                            suppliers[s].count++;
+                                                            if (p.status === 'Tamamlandı') {
+                                                                suppliers[s].completed++;
+                                                                suppliers[s].total += p.totalCost || 0;
+                                                            }
+                                                        });
+                                                        return Object.entries(suppliers).map(([name, data]) => (
+                                                            <tr key={name} className="hover:bg-slate-50">
+                                                                <td className="px-4 py-3 font-bold text-slate-700">{name}</td>
+                                                                <td className="px-4 py-3 text-center font-mono">{data.count}</td>
+                                                                <td className="px-4 py-3 text-center font-mono text-emerald-600">{data.completed}</td>
+                                                                <td className="px-4 py-3 text-right font-bold text-slate-800">₺{data.total.toLocaleString('tr-TR')}</td>
+                                                            </tr>
+                                                        ));
+                                                    })()}
+                                                    {purchases.length === 0 && (
+                                                        <tr><td colSpan={4} className="py-8 text-center text-slate-400 italic">Sipariş kaydı yok.</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===================== MONTHLY ===================== */}
+                            {activeSection === 'monthly' && (
+                                <div className="space-y-8">
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Aylık Gelir / Gider Karşılaştırması</h3>
+                                        {monthlyData.length === 0 ? (
+                                            <p className="text-slate-400 italic text-sm text-center py-12">Yeterli veri yok.</p>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {monthlyData.map(([month, data]) => (
+                                                    <div key={month} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                                                        <div className="flex justify-between items-center mb-3">
+                                                            <span className="font-bold text-slate-700 text-sm">{month}</span>
+                                                            <span className={`font-bold text-xs px-2 py-1 rounded-lg ${(data.income - data.expense) >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                                {(data.income - data.expense) >= 0 ? '+' : ''}{(data.income - data.expense).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}
+                                                            </span>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <div>
+                                                                <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                                                                    <span>Gelir</span>
+                                                                    <span className="text-emerald-600">₺{data.income.toLocaleString('tr-TR')}</span>
+                                                                </div>
+                                                                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-700" style={{ width: `${(data.income / maxMonthlyValue) * 100}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                                                                    <span>Gider</span>
+                                                                    <span className="text-rose-600">₺{data.expense.toLocaleString('tr-TR')}</span>
+                                                                </div>
+                                                                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div className="h-full bg-gradient-to-r from-rose-400 to-rose-600 rounded-full transition-all duration-700" style={{ width: `${(data.expense / maxMonthlyValue) * 100}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===================== COST ANALYSIS ===================== */}
+                            {activeSection === 'cost' && (
+                                <div className="space-y-8">
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                        <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bitki Bazlı Maliyet Analizi (Üretim Partileri)</h3>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm">
+                                                <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                    <tr>
+                                                        <th className="px-6 py-4">Parti / Ürün</th>
+                                                        <th className="px-6 py-4 text-center">Miktar</th>
+                                                        <th className="px-6 py-4 text-center">Konum</th>
+                                                        <th className="px-6 py-4 text-center">Safha</th>
+                                                        <th className="px-6 py-4 text-right">Toplam Maliyet</th>
+                                                        <th className="px-6 py-4 text-right">Birim Maliyet</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {plantCosts.map((pc, i) => (
+                                                        <tr key={i} className="hover:bg-slate-50 transition">
+                                                            <td className="px-6 py-4">
+                                                                <p className="font-bold text-slate-700">{pc.name}</p>
+                                                                <p className="text-[10px] text-emerald-600 font-mono">{pc.lotId}</p>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-center font-mono font-bold">{pc.quantity.toLocaleString()}</td>
+                                                            <td className="px-6 py-4 text-center">
+                                                                <span className="px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600">{pc.location}</span>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">{pc.stage}</td>
+                                                            <td className="px-6 py-4 text-right font-bold text-slate-800">₺{pc.totalCost.toFixed(2)}</td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <span className={`font-bold ${pc.unitCost > 5 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                                                    ₺{pc.unitCost.toFixed(2)}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                    {plantCosts.length === 0 && (
+                                                        <tr><td colSpan={6} className="py-12 text-center text-slate-400 italic">Üretim partisi bulunamadı.</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Labor & Energy Summary */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">👷 İşçilik Giderleri</h3>
+                                            {(() => {
+                                                const laborExpenses = expenses.filter(e => e.category === 'İşçilik');
+                                                const laborTotal = laborExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                                                return (
+                                                    <div>
+                                                        <p className="text-3xl font-black text-slate-800 mb-2">₺{laborTotal.toLocaleString('tr-TR')}</p>
+                                                        <p className="text-xs text-slate-400">{laborExpenses.length} kayıt</p>
+                                                        <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
+                                                            {laborExpenses.slice(0, 10).map((e, i) => (
+                                                                <div key={i} className="flex justify-between items-center text-xs p-2 bg-slate-50 rounded-lg">
+                                                                    <span className="text-slate-600 truncate max-w-[60%]">{e.description}</span>
+                                                                    <span className="font-bold text-slate-800">₺{Number(e.amount).toLocaleString('tr-TR')}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">⚡ Enerji Giderleri</h3>
+                                            {(() => {
+                                                const energyExpenses = expenses.filter(e => e.category === 'Enerji');
+                                                const energyTotal = energyExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                                                return (
+                                                    <div>
+                                                        <p className="text-3xl font-black text-slate-800 mb-2">₺{energyTotal.toLocaleString('tr-TR')}</p>
+                                                        <p className="text-xs text-slate-400">{energyExpenses.length} kayıt</p>
+                                                        <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
+                                                            {energyExpenses.slice(0, 10).map((e, i) => (
+                                                                <div key={i} className="flex justify-between items-center text-xs p-2 bg-slate-50 rounded-lg">
+                                                                    <span className="text-slate-600 truncate max-w-[60%]">{e.description}</span>
+                                                                    <span className="font-bold text-slate-800">₺{Number(e.amount).toLocaleString('tr-TR')}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===================== OPERATIONS ===================== */}
+                            {activeSection === 'operations' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-2 space-y-8">
+                                        <TemperatureChart data={temperatureLogs} />
+
+                                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">🌡️ Sera Sıcaklık Kayıtları</h3>
+                                                <span className="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full">{temperatureLogs.length} Kayıt</span>
+                                            </div>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-sm">
+                                                    <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                        <tr>
+                                                            <th className="px-6 py-3">Tarih</th>
+                                                            <th className="px-6 py-3 text-center">İç Sıcaklık</th>
+                                                            <th className="px-6 py-3 text-center">Dış Sıcaklık</th>
+                                                            <th className="px-6 py-3">Mazot</th>
+                                                            <th className="px-6 py-3">Not</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-50">
+                                                        {temperatureLogs.slice(0, 20).map((log, i) => (
+                                                            <tr key={i} className="hover:bg-slate-50">
+                                                                <td className="px-6 py-3 text-slate-500 font-mono text-xs">{log.date || '-'}</td>
+                                                                <td className="px-6 py-3 text-center">
+                                                                    <span className="font-bold text-orange-600">{log.insideTemp || log.innerTemp || '-'}°C</span>
+                                                                </td>
+                                                                <td className="px-6 py-3 text-center">
+                                                                    <span className="font-bold text-blue-600">{log.outsideTemp || log.outerTemp || '-'}°C</span>
+                                                                </td>
+                                                                <td className="px-6 py-3 text-slate-600">{log.mazot || log.fuelConsumption || '-'}</td>
+                                                                <td className="px-6 py-3 text-slate-400 text-xs truncate max-w-xs">{log.notes || log.note || '-'}</td>
+                                                            </tr>
+                                                        ))}
+                                                        {temperatureLogs.length === 0 && (
+                                                            <tr><td colSpan={5} className="py-8 text-center text-slate-400 italic">Sıcaklık kaydı yok.</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-8">
+                                        {/* Fertilizer Logs (Moved here for better layout) */}
+                                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full">
+                                            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">🌿 Gübre Uygulama</h3>
+                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">{fertilizerLogs.length}</span>
+                                            </div>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-sm">
+                                                    <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                        <tr>
+                                                            <th className="px-4 py-3">Tarih</th>
+                                                            <th className="px-4 py-3">Gübre</th>
+                                                            <th className="px-4 py-3">Doz</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-50">
+                                                        {fertilizerLogs.slice(0, 10).map((log, i) => (
+                                                            <tr key={i} className="hover:bg-slate-50">
+                                                                <td className="px-4 py-3 text-slate-500 font-mono text-xs">{log.date || '-'}</td>
+                                                                <td className="px-4 py-3 font-bold text-slate-700">{log.fertilizerName || log.name || '-'}</td>
+                                                                <td className="px-4 py-3 text-slate-600 text-xs">{log.dosage || log.amount || '-'}</td>
+                                                            </tr>
+                                                        ))}
+                                                        {fertilizerLogs.length === 0 && (
+                                                            <tr><td colSpan={3} className="py-8 text-center text-slate-400 italic">Kayıt yok.</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </main >
+        </div >
+    );
+}
+
+function KPICard({ icon, label, value, color }: { icon: string, label: string, value: string, color: string }) {
+    const colorMap: Record<string, string> = {
+        emerald: 'border-emerald-100 bg-emerald-50/30',
+        blue: 'border-blue-100 bg-blue-50/30',
+        teal: 'border-teal-100 bg-teal-50/30',
+        rose: 'border-rose-100 bg-rose-50/30',
+        amber: 'border-amber-100 bg-amber-50/30',
+    };
+    const textMap: Record<string, string> = {
+        emerald: 'text-emerald-700',
+        blue: 'text-blue-700',
+        teal: 'text-teal-700',
+        rose: 'text-rose-700',
+        amber: 'text-amber-700',
+    };
+    return (
+        <div className={`p-4 rounded-2xl border shadow-sm ${colorMap[color] || colorMap.emerald}`}>
+            <div className="text-2xl mb-2">{icon}</div>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+            <p className={`text-lg font-black ${textMap[color] || textMap.emerald}`}>{value}</p>
+        </div>
+    );
+}
+
+function TemperatureChart({ data }: { data: any[] }) {
+    if (!data || data.length === 0) return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+            <p className="text-slate-400 italic text-sm">Grafik için yeterli veri yok.</p>
+        </div>
+    );
+
+    // Sor data by date
+    const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(-10); // Last 10 points
+
+    // Find min/max for scaling
+    const temps = sortedData.flatMap(d => [Number(d.insideTemp || d.innerTemp || 0), Number(d.outsideTemp || d.outerTemp || 0)]);
+    const minTemp = Math.min(...temps, 0) - 5;
+    const maxTemp = Math.max(...temps, 30) + 5;
+    const range = maxTemp - minTemp;
+
+    const height = 200;
+
+    // ViewBox width 1000, Height 200
+    const w = 1000;
+    const h = 200;
+
+    const getX = (i: number) => (i / (Math.max(sortedData.length - 1, 1))) * w;
+    const getYPix = (val: number) => h - ((val - minTemp) / range) * h;
+
+    const pathInside = sortedData.map((d, i) => `${getX(i)},${getYPix(Number(d.insideTemp || d.innerTemp || 0))}`).join(' ');
+    const pathOutside = sortedData.map((d, i) => `${getX(i)},${getYPix(Number(d.outsideTemp || d.outerTemp || 0))}`).join(' ');
+
+    return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sıcaklık Değişimi (Son 10 Kayıt)</h3>
+                <div className="flex gap-4 text-xs font-bold">
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-orange-500"></div> İç Ortam</div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Dış Ortam</div>
+                </div>
+            </div>
+
+            <div className="w-full h-[200px] relative">
+                <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full overflow-visible">
+                    {/* Grid lines */}
+                    {[0, 0.25, 0.5, 0.75, 1].map(p => (
+                        <line key={p} x1="0" y1={p * h} x2={w} y2={p * h} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="5,5" />
+                    ))}
+
+                    {/* Paths */}
+                    <polyline points={pathOutside} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    <polyline points={pathInside} fill="none" stroke="#f97316" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+                    {/* Dots */}
+                    {sortedData.map((d, i) => (
+                        <g key={i}>
+                            <circle cx={getX(i)} cy={getYPix(Number(d.outsideTemp || d.outerTemp || 0))} r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
+                            <circle cx={getX(i)} cy={getYPix(Number(d.insideTemp || d.innerTemp || 0))} r="4" fill="white" stroke="#f97316" strokeWidth="2" />
+
+                            {/* Labels for last point */}
+                            {i === sortedData.length - 1 && (
+                                <>
+                                    <text x={getX(i)} y={getYPix(Number(d.outsideTemp || 0)) - 10} textAnchor="middle" fill="#3b82f6" fontSize="12" fontWeight="bold">{d.outsideTemp || d.outerTemp}°</text>
+                                    <text x={getX(i)} y={getYPix(Number(d.insideTemp || 0)) - 10} textAnchor="middle" fill="#f97316" fontSize="12" fontWeight="bold">{d.insideTemp || d.innerTemp}°</text>
+                                </>
+                            )}
+                        </g>
+                    ))}
+                </svg>
+            </div>
+
+            <div className="flex justify-between mt-2 text-[10px] text-slate-400 font-mono uppercase">
+                {sortedData.map((d, i) => (
+                    <span key={i}>{new Date(d.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</span>
+                ))}
+            </div>
+        </div>
+    );
+}

@@ -1,33 +1,60 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 
 export default function DestekPage() {
-    const [tickets, setTickets] = useState([
-        { id: '1', customer: 'Audit Test Tarım', subject: 'Zeytin Fidanı Renk Değişimi', status: 'Açık', date: '18.01.2026', content: 'Fidanların yapraklarında sararma gözlemlendi.' },
-        { id: '2', customer: 'Yeşil Bahçe Ltd.', subject: 'Nakliye Esnasında Hasar', status: 'Çözüldü', date: '15.01.2026', content: 'Kargoda 5 adet fidan saksısı kırılmış.' },
-    ]);
+    const [tickets, setTickets] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTicket, setNewTicket] = useState({ customer: '', subject: '', content: '', status: 'Açık' });
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
 
-    const handleAddTicket = (e: React.FormEvent) => {
-        e.preventDefault();
-        const ticket = {
-            ...newTicket,
-            id: Math.random().toString(36).substr(2, 9),
-            date: new Date().toLocaleDateString('tr-TR'),
-        };
-        setTickets([ticket, ...tickets]);
-        setNewTicket({ customer: '', subject: '', content: '', status: 'Açık' });
-        setIsModalOpen(false);
+    useEffect(() => {
+        fetchTickets();
+    }, []);
+
+    const fetchTickets = async () => {
+        try {
+            const res = await fetch(`${API_URL}/support?tenantId=demo-tenant`);
+            const data = await res.json();
+            setTickets(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Failed to fetch tickets:', err);
+            setTickets([]);
+        }
     };
 
-    const toggleStatus = (id: string) => {
-        setTickets(tickets.map(t =>
-            t.id === id ? { ...t, status: t.status === 'Açık' ? 'Çözüldü' : 'Açık' } : t
-        ));
+    const handleAddTicket = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const res = await fetch(`${API_URL}/support?tenantId=demo-tenant`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...newTicket,
+                    date: new Date().toLocaleDateString('tr-TR')
+                }),
+            });
+            if (res.ok) {
+                setNewTicket({ customer: '', subject: '', content: '', status: 'Açık' });
+                setIsModalOpen(false);
+                fetchTickets();
+
+                // Aktivite Log
+                fetch(`${API_URL}/activity?tenantId=demo-tenant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'Destek Talebi',
+                        title: `${newTicket.customer} - ${newTicket.subject}`,
+                        icon: '💬',
+                        color: 'bg-indigo-50 text-indigo-600'
+                    })
+                });
+            }
+        } catch (err) {
+            alert('Talep oluşturulurken hata oluştu.');
+        }
     };
 
     return (
@@ -65,23 +92,23 @@ export default function DestekPage() {
                                         <tr key={ticket.id} className="hover:bg-slate-50 transition group">
                                             <td className="px-6 py-4">
                                                 <p className="font-bold text-slate-700 leading-tight">{ticket.customer}</p>
-                                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter mt-1">#TIC-{ticket.id.toUpperCase().slice(0, 4)}</p>
+                                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter mt-1">#TIC-{ticket.id ? ticket.id.toString().toUpperCase().slice(0, 4) : 'UNKNOWN'}</p>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <p className="text-sm font-semibold text-slate-600">{ticket.subject}</p>
                                                 <p className="text-[11px] text-slate-400 truncate max-w-[300px]">{ticket.content}</p>
                                             </td>
-                                            <td className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase">{ticket.date}</td>
+                                            <td className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase">
+                                                {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('tr-TR') : (ticket.date || '-')}
+                                            </td>
                                             <td className="px-6 py-4">
-                                                <button
-                                                    onClick={() => toggleStatus(ticket.id)}
-                                                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter transition-colors ${ticket.status === 'Açık'
-                                                        ? 'bg-amber-50 text-amber-600 border border-amber-100'
-                                                        : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                                        }`}
+                                                <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter transition-colors ${ticket.status === 'Açık' || ticket.status === 'NEW'
+                                                    ? 'bg-amber-50 text-amber-600 border border-amber-100'
+                                                    : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                    }`}
                                                 >
-                                                    {ticket.status}
-                                                </button>
+                                                    {ticket.status === 'NEW' ? 'YENİ' : ticket.status}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <button className="text-slate-300 hover:text-emerald-600 font-black text-[10px] uppercase tracking-widest transition-colors">GÖRÜNTÜLE</button>

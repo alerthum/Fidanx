@@ -13,6 +13,7 @@ import { ActivityModule } from './activity/activity.module';
 import { IntegrationModule } from './integration/integration.module';
 import { SeedController } from './seed/seed.controller';
 import { PurchasesModule } from './purchases/purchases.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { PurchasesModule } from './purchases/purchases.module';
     ActivityModule,
     IntegrationModule,
     PurchasesModule,
+    SupportModule,
   ],
   controllers: [AppController, SeedController],
   providers: [AppService],

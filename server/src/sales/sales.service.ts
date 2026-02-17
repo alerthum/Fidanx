@@ -91,15 +91,17 @@ export class SalesService {
         if (!order.items || !Array.isArray(order.items)) return;
 
         for (const item of order.items) {
-            if (item.plantId) {
-                const plantRef = this.firebase.db.collection('tenants').doc(tenantId).collection('plants').doc(item.plantId);
+            const plantId = item.plantId || item.id;
+            if (plantId) {
+                const plantRef = this.firebase.db.collection('tenants').doc(tenantId).collection('plants').doc(plantId);
                 const plantDoc = await plantRef.get();
                 if (plantDoc.exists) {
                     const current = plantDoc.data()?.currentStock || 0;
                     // Prevent negative stock? Or allow with warning? Let's allow but log maybe.
                     // For now, simple deduction.
+                    const newStock = Math.max(0, current - (Number(item.qty || item.quantity) || 0));
                     await plantRef.update({
-                        currentStock: Math.max(0, current - (Number(item.quantity) || 0))
+                        currentStock: newStock
                     });
                 }
             }

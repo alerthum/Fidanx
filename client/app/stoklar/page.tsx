@@ -19,7 +19,10 @@ interface Plant {
     currentStock?: number;
     wholesalePrice?: number;
     retailPrice?: number;
+    purchasePrice?: number;
     criticalStock?: number;
+    viyolCount?: number;
+    cuttingCount?: number;
     createdAt: string;
 }
 
@@ -42,6 +45,7 @@ export default function StoklarPage() {
         currentStock: 0,
         wholesalePrice: 0,
         retailPrice: 0,
+        purchasePrice: 0,
         criticalStock: 10 // Default critical stock
     });
 
@@ -92,6 +96,7 @@ export default function StoklarPage() {
             currentStock: plant.currentStock || 0,
             wholesalePrice: plant.wholesalePrice || 0,
             retailPrice: plant.retailPrice || 0,
+            purchasePrice: plant.purchasePrice || 0,
             criticalStock: plant.criticalStock || 10
         });
         setSelectedPlantId(plant.id);
@@ -115,7 +120,7 @@ export default function StoklarPage() {
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0, wholesalePrice: 0, retailPrice: 0, criticalStock: 10 });
+                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0, wholesalePrice: 0, retailPrice: 0, purchasePrice: 0, criticalStock: 10 });
                 setIsEditing(false);
                 setSelectedPlantId(null);
                 fetchPlants();
@@ -124,6 +129,15 @@ export default function StoklarPage() {
             alert('Sunucuya bağlanılamadı.');
         }
     };
+
+    const [selectedCategory, setSelectedCategory] = useState('TÜMÜ');
+
+    // Extract unique categories
+    const categories = ['TÜMÜ', ...Array.from(new Set(plants.map(p => p.category).filter(Boolean)))];
+
+    const filteredPlants = selectedCategory === 'TÜMÜ'
+        ? plants
+        : plants.filter(p => p.category === selectedCategory);
 
     return (
         <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8fafc]">
@@ -134,12 +148,21 @@ export default function StoklarPage() {
                         <h1 className="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Stok Listesi</h1>
                         <p className="text-xs lg:text-sm text-slate-500">Tüm fidan türleri, ana ağaçlar ve grup kodları.</p>
                     </div>
-                    <div className="flex gap-3 w-full sm:w-auto">
+                    <div className="flex flex-wrap gap-3 w-full sm:w-auto items-center">
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500 hover:border-emerald-300 transition w-full sm:w-auto uppercase tracking-wide"
+                        >
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
                         <ExportButton title="Mevcut Stok Durumu" tableId="stok-table" />
                         <button
                             onClick={() => {
                                 setIsEditing(false);
-                                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0, wholesalePrice: 0, retailPrice: 0, criticalStock: 10 });
+                                setNewPlant({ name: '', category: '', sku: '', kod1: '', kod2: '', kod3: '', kod4: '', kod5: '', type: 'CUTTING', volume: '', dimensions: '', currentStock: 0, wholesalePrice: 0, retailPrice: 0, purchasePrice: 0, criticalStock: 10 });
                                 setIsModalOpen(true);
                             }}
                             className="flex-1 sm:flex-none bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition active:scale-95"
@@ -154,7 +177,7 @@ export default function StoklarPage() {
                         <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="flex items-center gap-4 text-rose-700">
                                 <span className="text-2xl">⚠️</span>
-                                <div>
+                                <div className="ml-2">
                                     <p className="font-bold text-sm">Sunucu Bağlantı Sorunu</p>
                                     <p className="text-xs opacity-80">{error}</p>
                                 </div>
@@ -176,13 +199,14 @@ export default function StoklarPage() {
                                         <th className="px-6 py-4">Fidan Adı & Tip</th>
                                         <th className="px-6 py-4">Kategori / SKU</th>
                                         <th className="px-6 py-4 text-center">Mevcut Stok</th>
-                                        <th className="px-6 py-4 text-center">Birim Fiyat (W/R)</th>
+                                        <th className="px-6 py-4 text-center">Birim Fiyat (Alış/Satış)</th>
+                                        <th className="px-6 py-4 text-center">Viyol / Çelik</th>
                                         <th className="px-6 py-4 text-center">Kod 1-5 (Grup)</th>
                                         <th className="px-6 py-4 text-right">İşlemler</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {Array.isArray(plants) && plants.map((plant) => (
+                                    {Array.isArray(filteredPlants) && filteredPlants.map((plant) => (
                                         <tr key={plant.id} className="hover:bg-slate-50 transition group text-sm">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
@@ -217,6 +241,30 @@ export default function StoklarPage() {
                                                         </span>
                                                     )}
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="font-bold text-slate-700" title="Toptan Satış Fiyatı">
+                                                        {plant.wholesalePrice ? `S: ₺${plant.wholesalePrice.toLocaleString('tr-TR')}` : '-'}
+                                                    </span>
+                                                    <span className="text-[10px] text-emerald-600 font-bold mt-0.5" title="Alış Fiyatı (Maliyet)">
+                                                        {plant.purchasePrice ? `A: ₺${plant.purchasePrice.toLocaleString('tr-TR')}` : ''}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {plant.viyolCount ? (
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100">
+                                                            🧫 {plant.viyolCount} viyol
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                                                            {plant.cuttingCount?.toLocaleString()} çelik
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-300 text-xs">—</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex justify-center gap-1">
@@ -332,7 +380,17 @@ export default function StoklarPage() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="col-span-2 grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Alış Fiyatı (Maliyet)</label>
+                                        <input
+                                            type="number"
+                                            value={newPlant.purchasePrice}
+                                            onChange={(e) => setNewPlant({ ...newPlant, purchasePrice: parseFloat(e.target.value) || 0 })}
+                                            className="w-full px-4 py-3 rounded-lg border border-slate-200 outline-none focus:border-emerald-500 text-sm shadow-sm transition bg-emerald-50/20"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Toptan Fiyat (₺)</label>
                                         <input
@@ -343,8 +401,8 @@ export default function StoklarPage() {
                                             placeholder="0.00"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Perakende Fiyat (₺)</label>
+                                    <div className="col-span-2 lg:col-span-1">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wider">Perakende Fiyat</label>
                                         <input
                                             type="number"
                                             value={newPlant.retailPrice}

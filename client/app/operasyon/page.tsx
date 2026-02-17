@@ -16,7 +16,8 @@ export default function OperationsPage() {
         expenseType: '',
         description: '',
         cost: 0,
-        measurements: {}
+        measurements: {},
+        operationDate: new Date().toISOString().split('T')[0]
     });
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
@@ -76,12 +77,6 @@ export default function OperationsPage() {
             icon = '🚜';
             color = 'bg-amber-50 text-amber-600 border-amber-200';
             details = formData.description;
-        } else if (activeTab === 'measure') {
-            title = 'Ortam Ölçümü';
-            icon = '🌡️';
-            color = 'bg-purple-50 text-purple-600 border-purple-200';
-            const parts = Object.entries(formData.measurements).map(([k, v]) => `${k}: ${v}`);
-            details = parts.join(', ');
         }
 
         const payload = {
@@ -93,7 +88,8 @@ export default function OperationsPage() {
             locations: formData.locations,
             data: formData, // Store full form data
             cost: parseFloat(formData.cost) || 0,
-            timestamp: new Date().toISOString()
+            timestamp: formData.operationDate ? new Date(formData.operationDate).toISOString() : new Date().toISOString(),
+            date: formData.operationDate || new Date().toISOString().split('T')[0]
         };
 
         try {
@@ -103,7 +99,7 @@ export default function OperationsPage() {
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                setFormData({ locations: [], recipeId: '', expenseType: '', description: '', cost: 0, measurements: {} });
+                setFormData({ locations: [], recipeId: '', expenseType: '', description: '', cost: 0, measurements: {}, operationDate: new Date().toISOString().split('T')[0] });
                 fetchLogs();
                 // Optionally trigger cost calculation backend task here
             } else {
@@ -142,16 +138,21 @@ export default function OperationsPage() {
                                 >
                                     🚜 Bakım
                                 </button>
-                                <button
-                                    onClick={() => setActiveTab('measure')}
-                                    className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition ${activeTab === 'measure' ? 'bg-purple-50 text-purple-600' : 'text-slate-400 hover:bg-slate-50'}`}
-                                >
-                                    🌡️ Ölçüm
-                                </button>
                             </div>
 
                             <div className="p-6">
                                 <form onSubmit={handleSubmit} className="space-y-6">
+
+                                    {/* DATE PICKER */}
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">📅 İşlem Tarihi</label>
+                                        <input
+                                            type="date"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm font-bold bg-slate-50"
+                                            value={formData.operationDate}
+                                            onChange={e => setFormData({ ...formData, operationDate: e.target.value })}
+                                        />
+                                    </div>
 
                                     {/* LOCATION SELECTOR */}
                                     <div>
@@ -218,45 +219,23 @@ export default function OperationsPage() {
                                         </>
                                     )}
 
-                                    {activeTab === 'measure' && (
-                                        <div className="grid grid-cols-2 gap-4">
-                                            {(settings.measurementParams || ['Sıcaklık', 'Nem']).map((param: string) => (
-                                                <div key={param}>
-                                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{param}</label>
-                                                    <input
-                                                        type="text"
-                                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-purple-500 text-sm font-bold"
-                                                        placeholder="Değer giriniz"
-                                                        onChange={e => setFormData({
-                                                            ...formData,
-                                                            measurements: { ...formData.measurements, [param]: e.target.value }
-                                                        })}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {activeTab !== 'measure' && (
-                                        <div>
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ek Maliyet (TL)</label>
-                                            <input
-                                                type="number"
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-slate-500 text-sm font-bold"
-                                                placeholder="0.00"
-                                                value={formData.cost || ''}
-                                                onChange={e => setFormData({ ...formData, cost: e.target.value })}
-                                            />
-                                        </div>
-                                    )}
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ek Maliyet (TL)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-slate-500 text-sm font-bold"
+                                            placeholder="0.00"
+                                            value={formData.cost || ''}
+                                            onChange={e => setFormData({ ...formData, cost: e.target.value })}
+                                        />
+                                    </div>
 
                                     <button
                                         type="submit"
                                         disabled={isLoading}
                                         className={`w-full py-4 rounded-xl font-bold shadow-lg text-white transition active:scale-95 text-lg uppercase tracking-wide
                                             ${activeTab === 'app' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' :
-                                                activeTab === 'maintenance' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200' :
-                                                    'bg-purple-600 hover:bg-purple-700 shadow-purple-200'}`}
+                                                'bg-amber-600 hover:bg-amber-700 shadow-amber-200'}`}
                                     >
                                         {isLoading ? 'Kaydediliyor...' : 'İşlemi Kaydet'}
                                     </button>

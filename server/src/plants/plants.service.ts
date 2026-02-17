@@ -25,6 +25,7 @@ export class PlantsService {
         currentStock?: number; // Mevcut stok miktarı
         wholesalePrice?: number; // Toptan Fiyat
         retailPrice?: number; // Perakende Fiyat
+        purchasePrice?: number; // Alış Fiyatı (Birim Maliyet)
         criticalStock?: number; // Kritik Stok Seviyesi
     }) {
         const docRef = await this.plants(tenantId).add({

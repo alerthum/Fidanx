@@ -50,14 +50,19 @@ export default function AyarlarPage() {
     };
 
     const handleClearData = async () => {
-        if (confirm('Tüm üretim ve stok verileri silinecektir. Emin misiniz?')) {
-            try {
-                const res = await fetch(`${API_URL}/seed/clear?tenantId=demo-tenant`, { method: 'DELETE' });
-                if (res.ok) alert('Sistem sıfırlandı.');
-                else alert('Sunucu hatası.');
-            } catch (err) {
-                alert('Sunucuya bağlanılamadı.');
+        const password = prompt('Sistemi temizlemek için yönetici parolasını girin:');
+        if (password === 'fidanx') {
+            if (confirm('Tüm üretim ve stok verileri silinecektir. Emin misiniz?')) {
+                try {
+                    const res = await fetch(`${API_URL}/seed/clear?tenantId=demo-tenant`, { method: 'DELETE' });
+                    if (res.ok) alert('Sistem sıfırlandı.');
+                    else alert('Sunucu hatası.');
+                } catch (err) {
+                    alert('Sunucuya bağlanılamadı.');
+                }
             }
+        } else if (password !== null) {
+            alert('Hatalı parola!');
         }
     };
 

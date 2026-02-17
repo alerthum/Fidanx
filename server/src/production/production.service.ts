@@ -22,8 +22,25 @@ export class ProductionService {
             stage: data.stage || 'TEPSİ',
             location: data.location || 'Depo',
             startDate: data.startDate || new Date(),
-            history: data.history || [{ date: new Date(), action: 'Üretim Başlatıldı' }]
+            history: data.history || [{ date: new Date(), action: 'Üretim Başlatıldı' }],
+            accumulatedCost: 0,
+            costHistory: []
         };
+
+        // MRP: Reçete varsa maliyet hesapla
+        if (data.recipeId && data.quantity) {
+            const materialCost = await this.calculateRecipeCost(tenantId, data.recipeId, data.quantity);
+            if (materialCost > 0) {
+                finalData.accumulatedCost = materialCost;
+                finalData.costHistory.push({
+                    date: new Date(),
+                    amount: materialCost,
+                    unitVal: materialCost / data.quantity,
+                    description: 'İlk Madde ve Malzeme Gideri (Reçete)',
+                    type: 'HAMMADDE'
+                });
+            }
+        }
 
         // MRP: Reçete varsa önce stok kontrolü yap sonra düş
         if (data.recipeId && data.quantity) {
@@ -100,6 +117,30 @@ export class ProductionService {
         } catch (error) {
             console.error('Stok düşümü sırasında hata:', error);
         }
+    }
+
+    private async calculateRecipeCost(tenantId: string, recipeId: string, quantity: number): Promise<number> {
+        let totalCost = 0;
+        try {
+            const recipeDoc = await this.firebase.db.collection('tenants').doc(tenantId).collection('recipes').doc(recipeId).get();
+            if (!recipeDoc.exists) return 0;
+            const recipe = recipeDoc.data();
+            if (!recipe?.items) return 0;
+
+            for (const item of recipe.items) {
+                if (item.materialId && item.amount) {
+                    const materialDoc = await this.firebase.db.collection('tenants').doc(tenantId).collection('plants').doc(item.materialId).get();
+                    if (materialDoc.exists) {
+                        const matData = materialDoc.data();
+                        const price = matData?.purchasePrice || 0;
+                        totalCost += (item.amount * quantity * price);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Maliyet hesaplama hatası:', e);
+        }
+        return totalCost;
     }
 
     async addHistoryLog(tenantId: string, batchId: string, log: { action: string; note?: string }) {
@@ -186,10 +227,43 @@ export class ProductionService {
         // MRP: Reçete değiştiyse veya yeni reçete uygulandıysa önce kontrol et sonra stoktan düş
         if (recipeId && batchData?.quantity) {
             await this.checkStockAvailability(tenantId, recipeId, batchData.quantity);
+
+            // Maliyet Hesabı
+            const materialCost = await this.calculateRecipeCost(tenantId, recipeId, batchData.quantity);
+            if (materialCost > 0) {
+                const currentAccumulated = batchData.accumulatedCost || 0;
+                const currentHistory = batchData.costHistory || [];
+
+                updateData.accumulatedCost = currentAccumulated + materialCost;
+                updateData.costHistory = [...currentHistory, {
+                    date: new Date(),
+                    amount: materialCost,
+                    unitVal: materialCost / batchData.quantity,
+                    description: `Reçete Uygulandı (${stage})`,
+                    type: 'HAMMADDE'
+                }];
+            }
+
             await docRef.update(updateData);
             await this.deductMaterials(tenantId, recipeId, batchData.quantity);
         } else {
             await docRef.update(updateData);
+        }
+
+        // STOK ENTEGRASYONU: Eğer safha SATIŞA_HAZIR ise stoğa ekle
+        if (stage === 'SATIŞA_HAZIR' && batchData.stage !== 'SATIŞA_HAZIR' && batchData.plantId && batchData.quantity) {
+            const plantRef = this.firebase.db.collection('tenants').doc(tenantId).collection('plants').doc(batchData.plantId);
+            const plantDoc = await plantRef.get();
+            if (plantDoc.exists) {
+                const currentStock = plantDoc.data()?.currentStock || 0;
+                await plantRef.update({
+                    currentStock: currentStock + (Number(batchData.quantity) || 0)
+                });
+                await this.addHistoryLog(tenantId, id, {
+                    action: 'Stok Güncellendi',
+                    note: `${batchData.quantity} adet stok artışı yapıldı.`
+                });
+            }
         }
 
         await this.addHistoryLog(tenantId, id, {
@@ -277,5 +351,33 @@ export class ProductionService {
         await Promise.all(batchUpdates);
 
         return { processedBatches: allBatches.length, totalDistributed: totalCost };
+    }
+
+    async migrateSeraLocations(tenantId: string) {
+        const batchesRef = this.production(tenantId);
+        const snapshot = await batchesRef.get();
+
+        const uniqueLocations = new Set();
+        let seraACount = 0;
+        const batch = this.firebase.db.batch();
+
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            uniqueLocations.add(data.location);
+            if (data.location === 'Sera A') {
+                seraACount++;
+                batch.update(doc.ref, { location: 'Sera 1' });
+            }
+        });
+
+        if (seraACount > 0) {
+            await batch.commit();
+        }
+
+        return {
+            message: `Migrated ${seraACount} batches from Sera A to Sera 1.`,
+            foundLocations: Array.from(uniqueLocations),
+            totalDocs: snapshot.size
+        };
     }
 }

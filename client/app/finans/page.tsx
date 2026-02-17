@@ -12,7 +12,9 @@ export default function FinansPage() {
         category: 'Enerji',
         amount: 0,
         description: '',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        periodType: 'Aylık' as 'Günlük' | 'Aylık',
+        periodMonth: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
     });
 
     const categories = ['Enerji', 'İşçilik', 'Bakım/Onarım', 'Lojistik', 'Kira', 'Vergi', 'Diğer'];
@@ -47,7 +49,7 @@ export default function FinansPage() {
             });
             if (res.ok) {
                 setIsModalOpen(false);
-                setNewExpense({ category: 'Enerji', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
+                setNewExpense({ category: 'Enerji', amount: 0, description: '', date: new Date().toISOString().split('T')[0], periodType: 'Aylık', periodMonth: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}` });
                 fetchData();
             }
         } catch (err) { alert('Hata oluştu'); }
@@ -78,13 +80,13 @@ export default function FinansPage() {
     // Merge transactions for timeline list
     const transactions = [
         ...sales.filter(s => s.status === 'Tamamlandı').map(s => ({
-            id: s.id, type: 'income', date: s.orderDate, amount: s.totalAmount, label: `Satış: ${s.customerName}`, category: 'Satış Geliri', isDeletable: false
+            id: s.id, type: 'income', date: s.orderDate, amount: s.totalAmount || 0, label: `Satış: ${s.customerName}`, category: 'Satış Geliri', isDeletable: false
         })),
         ...purchases.filter(p => p.status === 'Tamamlandı').map(p => ({
-            id: p.id, type: 'expense', date: p.orderDate, amount: p.totalCost, label: `Satınalma: ${p.supplier}`, category: 'Hammadde', isDeletable: false
+            id: p.id, type: 'expense', date: p.orderDate, amount: p.totalCost || 0, label: `Satınalma: ${p.supplier}`, category: 'Hammadde', isDeletable: false
         })),
         ...expenses.map(e => ({
-            id: e.id, type: 'expense', date: e.date, amount: e.amount, label: e.description, category: e.category, isDeletable: true
+            id: e.id, type: 'expense', date: e.date, amount: e.amount || 0, label: e.description, category: e.category, isDeletable: true
         }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -224,14 +226,54 @@ export default function FinansPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tarih</label>
-                                    <input
-                                        required
-                                        type="date"
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-rose-500"
-                                        value={newExpense.date}
-                                        onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
-                                    />
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Dönem Tipi</label>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewExpense({ ...newExpense, periodType: 'Günlük' })}
+                                            className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition border ${newExpense.periodType === 'Günlük'
+                                                ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                                : 'bg-white text-slate-400 border-slate-200 hover:border-blue-300'
+                                                }`}
+                                        >
+                                            📅 Günlük
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewExpense({ ...newExpense, periodType: 'Aylık' })}
+                                            className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition border ${newExpense.periodType === 'Aylık'
+                                                ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                                                : 'bg-white text-slate-400 border-slate-200 hover:border-purple-300'
+                                                }`}
+                                        >
+                                            🗓️ Aylık
+                                        </button>
+                                    </div>
+                                    <p className="text-[9px] text-slate-400 mt-1.5 italic">
+                                        İşçilik gibi giderler günlük, Enerji gibi giderler aylık kaydedilebilir.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                        {newExpense.periodType === 'Günlük' ? 'Tarih' : 'Ay / Yıl'}
+                                    </label>
+                                    {newExpense.periodType === 'Günlük' ? (
+                                        <input
+                                            required
+                                            type="date"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-rose-500"
+                                            value={newExpense.date}
+                                            onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                                        />
+                                    ) : (
+                                        <input
+                                            required
+                                            type="month"
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-rose-500"
+                                            value={newExpense.periodMonth}
+                                            onChange={(e) => setNewExpense({ ...newExpense, periodMonth: e.target.value, date: e.target.value + '-01' })}
+                                        />
+                                    )}
                                 </div>
                                 <div className="flex gap-4 pt-4">
                                     <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 text-slate-500 font-bold bg-slate-100 rounded-xl hover:bg-slate-200 transition">İptal</button>

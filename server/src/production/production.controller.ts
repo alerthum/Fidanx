@@ -1,9 +1,15 @@
-import { Controller, Get, Post, Body, Param, Query, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, Patch } from '@nestjs/common';
 import { ProductionService } from './production.service';
+import { TemperatureService } from './temperature.service';
+import { FertilizerService } from './fertilizer.service';
 
 @Controller('production')
 export class ProductionController {
-    constructor(private readonly productionService: ProductionService) { }
+    constructor(
+        private readonly productionService: ProductionService,
+        private readonly temperatureService: TemperatureService,
+        private readonly fertilizerService: FertilizerService,
+    ) { }
 
     @Post('batches')
     createBatch(
@@ -43,6 +49,7 @@ export class ProductionController {
     ) {
         return this.productionService.addHistoryLog(tenantId, id, body);
     }
+
     @Patch('batches/:id/transfer')
     transferBatch(
         @Query('tenantId') tenantId: string,
@@ -50,5 +57,37 @@ export class ProductionController {
         @Body() body: { targetLocation: string; note?: string }
     ) {
         return this.productionService.transferBatch(tenantId, id, body.targetLocation, body.note);
+    }
+
+    // ── Sera Sıcaklık Ölçümleri ──
+    @Get('temperature-logs')
+    getTemperatureLogs(@Query('tenantId') tenantId: string) {
+        return this.temperatureService.findAll(tenantId);
+    }
+
+    @Post('temperature-logs')
+    createTemperatureLog(@Query('tenantId') tenantId: string, @Body() body: any) {
+        return this.temperatureService.create(tenantId, body);
+    }
+
+    @Delete('temperature-logs/:id')
+    deleteTemperatureLog(@Query('tenantId') tenantId: string, @Param('id') id: string) {
+        return this.temperatureService.remove(tenantId, id);
+    }
+
+    // ── Gübre Uygulamaları ──
+    @Get('fertilizer-logs')
+    getFertilizerLogs(@Query('tenantId') tenantId: string) {
+        return this.fertilizerService.findAll(tenantId);
+    }
+
+    @Post('fertilizer-logs')
+    createFertilizerLog(@Query('tenantId') tenantId: string, @Body() body: any) {
+        return this.fertilizerService.create(tenantId, body);
+    }
+
+    @Delete('fertilizer-logs/:id')
+    deleteFertilizerLog(@Query('tenantId') tenantId: string, @Param('id') id: string) {
+        return this.fertilizerService.remove(tenantId, id);
     }
 }

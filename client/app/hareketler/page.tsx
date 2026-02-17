@@ -4,7 +4,7 @@ import Sidebar from '@/components/Sidebar';
 
 export default function HareketlerPage() {
     const [batches, setBatches] = useState<any[]>([]);
-    const [locations, setLocations] = useState<string[]>(['Sera 1', 'Sera 2', 'Açık Alan', 'Depo']);
+    const [locations, setLocations] = useState<string[]>(['Sera 1', 'Açık Alan', 'Sera 2', 'Depo']);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedBatch, setSelectedBatch] = useState<any>(null);
     const [transferData, setTransferData] = useState({ targetLocation: 'Sera 1', note: '' });
@@ -28,9 +28,17 @@ export default function HareketlerPage() {
     };
 
     const fetchBatches = async () => {
-        const res = await fetch(`${API_URL}/production/batches?tenantId=demo-tenant`);
-        if (res.ok) {
-            setBatches(await res.json());
+        try {
+            const res = await fetch(`${API_URL}/production/batches?tenantId=demo-tenant`);
+            if (res.ok) {
+                const data = await res.json();
+                console.log('Fetched Batches:', data); // DEBUG LOG
+                setBatches(Array.isArray(data) ? data : []);
+            } else {
+                console.error('Failed to fetch batches:', res.status);
+            }
+        } catch (e) {
+            console.error('Error fetching batches:', e);
         }
     };
 
@@ -38,7 +46,11 @@ export default function HareketlerPage() {
         try {
             const res = await fetch(`${API_URL}/tenants/demo-tenant`);
             const data = await res.json();
-            if (data.settings?.locations) setLocations(data.settings.locations);
+            // Verify locations exist, if not use default
+            if (data.settings?.locations && Array.isArray(data.settings.locations) && data.settings.locations.length > 0) {
+                setLocations(data.settings.locations);
+            }
+            // else keep default: ['Sera 1', 'Açık Alan', 'Sera 2', 'Depo']
         } catch (err) { }
     };
 
@@ -87,14 +99,23 @@ export default function HareketlerPage() {
                     {/* Batches List regarding Location */}
                     <div className="space-y-6">
                         {locations.map(location => {
-                            const locationBatches = batches.filter(b => (b.location || 'Depo') === location);
+                            // Smart Default Location Logic
+                            const locationBatches = batches.filter(b => {
+                                if (b.location) return b.location === location;
+                                // If no location, check rules
+                                const defaultLoc = (b.plantName?.toLowerCase().includes('viyol')) ? 'Sera 1' : 'Açık Alan';
+                                return defaultLoc === location;
+                            });
+
                             if (locationBatches.length === 0) return null;
 
                             return (
                                 <div key={location} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                                     <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xl">📍</span>
+                                            <span className="text-xl">
+                                                {location.includes('Sera') ? '🌡️' : location.includes('Depo') ? '📦' : '🚜'}
+                                            </span>
                                             <h3 className="font-bold text-slate-700">{location}</h3>
                                             <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-xs font-bold">{locationBatches.length} Parti</span>
                                         </div>
@@ -104,52 +125,35 @@ export default function HareketlerPage() {
                                             <div key={batch.id} className="p-6 hover:bg-slate-50/50 transition flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                                                 <div>
                                                     <div className="flex items-center gap-3 mb-1">
-                                                        <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-wider">{batch.lotId}</span>
-                                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{batch.stage}</span>
+                                                        <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-wider">{batch.lotId}</span>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{batch.stage}</span>
+                                                        {!batch.location && (
+                                                            <span className="text-[9px] text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 font-bold">OTOMATİK KONUM</span>
+                                                        )}
                                                     </div>
-                                                    <h4 className="font-bold text-slate-800 text-lg">{batch.plantName || 'İsimsiz Ürün'}</h4>
-                                                    <p className="text-sm text-slate-500">{batch.quantity} Adet • {new Date(batch.startDate).toLocaleDateString('tr-TR')}</p>
+                                                    <h4 className="font-bold text-slate-800 text-base">{batch.plantName || 'İsimsiz Ürün'}</h4>
+                                                    <p className="text-xs text-slate-500">{batch.quantity} Adet • {new Date(batch.startDate).toLocaleDateString('tr-TR')}</p>
                                                 </div>
-                                                <button
-                                                    onClick={() => openTransferModal(batch)}
-                                                    className="bg-amber-100 text-amber-700 px-5 py-2.5 rounded-xl text-sm font-bold border border-amber-200 hover:bg-amber-200 hover:border-amber-300 transition shadow-sm active:scale-95 flex items-center gap-2"
-                                                >
-                                                    🚚 Transfer Et
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        className="bg-white text-slate-500 px-4 py-2 rounded-lg text-xs font-bold border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition shadow-sm active:scale-95 flex items-center gap-2"
+                                                        onClick={() => alert('Şecere özelliği yakında eklenecek.')} // Placeholder
+                                                    >
+                                                        📜 Şecere
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openTransferModal(batch)}
+                                                        className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md hover:shadow-lg shadow-amber-500/30 hover:to-orange-600 transition active:scale-95 flex items-center gap-2"
+                                                    >
+                                                        🚚 Transfer Et
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             );
                         })}
-
-                        {batches.filter(b => !b.location).length > 0 && (
-                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
-                                    <h3 className="font-bold text-slate-400">Konumu Belirsiz / Depo</h3>
-                                </div>
-                                <div className="divide-y divide-slate-100">
-                                    {batches.filter(b => !b.location).map(batch => (
-                                        <div key={batch.id} className="p-6 hover:bg-slate-50/50 transition flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                                            <div>
-                                                <div className="flex items-center gap-3 mb-1">
-                                                    <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-wider">{batch.lotId}</span>
-                                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{batch.stage}</span>
-                                                </div>
-                                                <h4 className="font-bold text-slate-800 text-lg">{batch.plantName || 'İsimsiz Ürün'}</h4>
-                                                <p className="text-sm text-slate-500">{batch.quantity} Adet • {new Date(batch.startDate).toLocaleDateString('tr-TR')}</p>
-                                            </div>
-                                            <button
-                                                onClick={() => openTransferModal(batch)}
-                                                className="bg-amber-100 text-amber-700 px-5 py-2.5 rounded-xl text-sm font-bold border border-amber-200 hover:bg-amber-200 hover:border-amber-300 transition shadow-sm active:scale-95 flex items-center gap-2"
-                                            >
-                                                🚚 Transfer Et
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
                         {batches.length === 0 && !isLoading && (
                             <div className="text-center py-20 bg-white rounded-3xl border border-slate-200">
