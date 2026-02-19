@@ -143,28 +143,29 @@ export default function SatinalmaPage() {
         <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50 font-sans">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="bg-white border-b border-slate-200 px-8 py-6 sticky top-0 z-30">
-                    <div className="flex justify-between items-center mb-4">
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-6 sticky top-0 z-30">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-0">
                         <div>
-                            <h1 className="text-2xl font-bold text-slate-800">Satınalma</h1>
-                            <p className="text-sm text-slate-500">Alış faturaları ve tedarikçi yönetimi.</p>
+                            <h1 className="text-xl lg:text-2xl font-bold text-slate-800">Satınalma</h1>
+                            <p className="text-xs lg:text-sm text-slate-500">Alış faturaları ve tedarikçi yönetimi.</p>
                         </div>
                         <button
                             onClick={() => {
                                 setNewOrder({ supplier: '', supplierId: '', description: '', status: 'Bekliyor', targetLocation: locations[0] || 'Sera 1', items: [] });
                                 setIsOrderModalOpen(true);
                             }}
-                            className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition active:scale-95"
+                            className="bg-emerald-600 text-white px-5 lg:px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition active:scale-95 w-full sm:w-auto"
                         >
                             + Yeni Alış Faturası
                         </button>
                     </div>
                 </header>
 
-                <div className="flex-1 p-8">
+                <div className="flex-1 p-4 lg:p-8">
                     {activeTab === 'orders' && (
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <table className="w-full text-left">
+                            {/* Desktop Table */}
+                            <table className="hidden lg:table w-full text-left">
                                 <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
                                     <tr>
                                         <th className="px-6 py-4">Tedarikçi / Cari</th>
@@ -247,14 +248,68 @@ export default function SatinalmaPage() {
                                     )}
                                 </tbody>
                             </table>
+
+                            {/* Mobile Card View */}
+                            <div className="lg:hidden divide-y divide-slate-100">
+                                {orders.map(order => (
+                                    <div key={order.id} className="p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-slate-700 text-sm">{order.supplier}</span>
+                                                <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-black ${order.status === 'Tamamlandı' ? 'bg-emerald-50 text-emerald-600' :
+                                                    order.status === 'İptal' ? 'bg-rose-50 text-rose-600' :
+                                                        'bg-amber-50 text-amber-600'
+                                                    }`}>
+                                                    {order.status}
+                                                </span>
+                                            </div>
+                                            <span className="font-mono font-bold text-slate-800 text-sm">₺{order.totalAmount ? order.totalAmount.toLocaleString() : '0'}</span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 font-mono mb-2">{order.orderDate ? new Date(order.orderDate).toLocaleDateString() : '-'}</p>
+                                        <div className="text-[11px] text-slate-500 mb-3">
+                                            {order.items?.map((item: any, idx: number) => (
+                                                <span key={idx} className="mr-2">{item.amount} {item.unit || 'Adet'} x {item.name || 'Ürün'}</span>
+                                            ))}
+                                            {(!order.items || order.items.length === 0) && <span className="italic text-slate-400">Kalem yok</span>}
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setNewOrder({
+                                                        supplier: order.supplier,
+                                                        supplierId: order.supplierId || '',
+                                                        description: order.description || '',
+                                                        status: order.status,
+                                                        targetLocation: order.targetLocation || 'Sera 1',
+                                                        items: order.items || []
+                                                    });
+                                                    setIsOrderModalOpen(true);
+                                                }}
+                                                className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-bold active:scale-95"
+                                            >
+                                                Düzenle
+                                            </button>
+                                            {order.status === 'Bekliyor' && (
+                                                <>
+                                                    <button onClick={() => updateOrderStatus(order.id, 'Tamamlandı')} className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-[10px] font-bold active:scale-95">Teslim Al</button>
+                                                    <button onClick={() => updateOrderStatus(order.id, 'İptal')} className="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-lg text-[10px] font-bold active:scale-95">İptal</button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {orders.length === 0 && (
+                                    <div className="px-6 py-12 text-center text-slate-400 italic">Henüz kayıtlı fatura bulunmuyor.</div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
 
                 {/* Main Order Modal */}
                 {isOrderModalOpen && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
                             <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                                 <h3 className="text-xl font-bold text-slate-800">
                                     {newOrder.status !== 'Bekliyor' ? 'Fatura Detayı' : 'Yeni Alış Faturası'}
@@ -262,7 +317,7 @@ export default function SatinalmaPage() {
                                 <button onClick={() => setIsOrderModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl">×</button>
                             </div>
 
-                            <div className="p-8 space-y-6 overflow-y-auto flex-1">
+                            <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1">
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="col-span-2 sm:col-span-1">
                                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tedarikçi (Cari)</label>
@@ -366,8 +421,8 @@ export default function SatinalmaPage() {
 
                 {/* Sub Modal: Add Item */}
                 {isItemModalOpen && (
-                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] flex items-center justify-center p-4 z-[60]">
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95">
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] flex items-end sm:items-center justify-center p-0 sm:p-4 z-[60]">
+                        <div className="bg-white rounded-t-3xl sm:rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[95vh] overflow-y-auto">
                             <h4 className="font-bold text-slate-800 mb-4">Ürün Seçimi</h4>
 
                             <div className="space-y-4">

@@ -52,7 +52,7 @@ export default function RaporlarPage() {
     const totalBatches = production.length;
     const totalCuttings = production.reduce((sum, b) => sum + (b.quantity || 0), 0);
     const totalSalesIncome = sales.filter(s => s.status === 'Tamamlandı').reduce((sum, s) => sum + (s.totalAmount || 0), 0);
-    const totalPurchaseCost = purchases.filter(p => p.status === 'Tamamlandı').reduce((sum, p) => sum + (p.totalCost || 0), 0);
+    const totalPurchaseCost = purchases.filter(p => p.status === 'Tamamlandı').reduce((sum, p) => sum + (p.totalAmount || 0), 0);
     const totalOperatingExpense = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const totalExpense = totalPurchaseCost + totalOperatingExpense;
     const netProfit = totalSalesIncome - totalExpense;
@@ -73,7 +73,7 @@ export default function RaporlarPage() {
         purchases.filter(p => p.status === 'Tamamlandı').forEach(p => {
             const month = new Date(p.orderDate).toLocaleDateString('tr-TR', { year: 'numeric', month: 'short' });
             if (!months[month]) months[month] = { income: 0, expense: 0 };
-            months[month].expense += p.totalCost || 0;
+            months[month].expense += p.totalAmount || 0;
         });
         return Object.entries(months).sort((a, b) => a[0].localeCompare(b[0]));
     };
@@ -243,7 +243,7 @@ export default function RaporlarPage() {
                                                             suppliers[s].count++;
                                                             if (p.status === 'Tamamlandı') {
                                                                 suppliers[s].completed++;
-                                                                suppliers[s].total += p.totalCost || 0;
+                                                                suppliers[s].total += p.totalAmount || 0;
                                                             }
                                                         });
                                                         return Object.entries(suppliers).map(([name, data]) => (
@@ -420,29 +420,32 @@ export default function RaporlarPage() {
                                                 <table className="w-full text-left text-sm">
                                                     <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                                         <tr>
-                                                            <th className="px-6 py-3">Tarih</th>
-                                                            <th className="px-6 py-3 text-center">İç Sıcaklık</th>
-                                                            <th className="px-6 py-3 text-center">Dış Sıcaklık</th>
-                                                            <th className="px-6 py-3">Mazot</th>
-                                                            <th className="px-6 py-3">Not</th>
+                                                            <th className="px-4 py-3">Tarih</th>
+                                                            <th className="px-4 py-3 text-center" colSpan={3}>Sera İçi (S/Ö/A)</th>
+                                                            <th className="px-4 py-3 text-center" colSpan={3}>Sera Dışı (S/Ö/A)</th>
+                                                            <th className="px-4 py-3 text-center">Mazot</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-50">
-                                                        {temperatureLogs.slice(0, 20).map((log, i) => (
-                                                            <tr key={i} className="hover:bg-slate-50">
-                                                                <td className="px-6 py-3 text-slate-500 font-mono text-xs">{log.date || '-'}</td>
-                                                                <td className="px-6 py-3 text-center">
-                                                                    <span className="font-bold text-orange-600">{log.insideTemp || log.innerTemp || '-'}°C</span>
-                                                                </td>
-                                                                <td className="px-6 py-3 text-center">
-                                                                    <span className="font-bold text-blue-600">{log.outsideTemp || log.outerTemp || '-'}°C</span>
-                                                                </td>
-                                                                <td className="px-6 py-3 text-slate-600">{log.mazot || log.fuelConsumption || '-'}</td>
-                                                                <td className="px-6 py-3 text-slate-400 text-xs truncate max-w-xs">{log.notes || log.note || '-'}</td>
-                                                            </tr>
-                                                        ))}
+                                                        {temperatureLogs.slice(0, 20).map((log: any, i: number) => {
+                                                            const si = log.seraIci || {};
+                                                            const sd = log.seraDisi || {};
+                                                            const dateStr = log.date ? new Date(log.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+                                                            return (
+                                                                <tr key={i} className="hover:bg-slate-50">
+                                                                    <td className="px-4 py-3 text-slate-500 font-mono text-xs">{dateStr}</td>
+                                                                    <td className="px-2 py-3 text-center text-xs font-bold text-orange-500">{si.sabah != null ? `${si.sabah}°` : '-'}</td>
+                                                                    <td className="px-2 py-3 text-center text-xs font-bold text-orange-600">{si.ogle != null ? `${si.ogle}°` : '-'}</td>
+                                                                    <td className="px-2 py-3 text-center text-xs font-bold text-orange-400">{si.aksam != null ? `${si.aksam}°` : '-'}</td>
+                                                                    <td className="px-2 py-3 text-center text-xs font-bold text-blue-500">{sd.sabah != null ? `${sd.sabah}°` : '-'}</td>
+                                                                    <td className="px-2 py-3 text-center text-xs font-bold text-blue-600">{sd.ogle != null ? `${sd.ogle}°` : '-'}</td>
+                                                                    <td className="px-2 py-3 text-center text-xs font-bold text-blue-400">{sd.aksam != null ? `${sd.aksam}°` : '-'}</td>
+                                                                    <td className="px-4 py-3 text-center text-xs font-bold text-slate-600">{log.mazot != null ? `${log.mazot} Lt` : '-'}</td>
+                                                                </tr>
+                                                            );
+                                                        })}
                                                         {temperatureLogs.length === 0 && (
-                                                            <tr><td colSpan={5} className="py-8 text-center text-slate-400 italic">Sıcaklık kaydı yok.</td></tr>
+                                                            <tr><td colSpan={8} className="py-8 text-center text-slate-400 italic">Sıcaklık kaydı yok.</td></tr>
                                                         )}
                                                     </tbody>
                                                 </table>
@@ -451,7 +454,7 @@ export default function RaporlarPage() {
                                     </div>
 
                                     <div className="space-y-8">
-                                        {/* Fertilizer Logs (Moved here for better layout) */}
+                                        {/* Fertilizer Logs */}
                                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full">
                                             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">🌿 Gübre Uygulama</h3>
@@ -462,20 +465,32 @@ export default function RaporlarPage() {
                                                     <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                                         <tr>
                                                             <th className="px-4 py-3">Tarih</th>
-                                                            <th className="px-4 py-3">Gübre</th>
-                                                            <th className="px-4 py-3">Doz</th>
+                                                            <th className="px-4 py-3">Uygulama</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-50">
-                                                        {fertilizerLogs.slice(0, 10).map((log, i) => (
-                                                            <tr key={i} className="hover:bg-slate-50">
-                                                                <td className="px-4 py-3 text-slate-500 font-mono text-xs">{log.date || '-'}</td>
-                                                                <td className="px-4 py-3 font-bold text-slate-700">{log.fertilizerName || log.name || '-'}</td>
-                                                                <td className="px-4 py-3 text-slate-600 text-xs">{log.dosage || log.amount || '-'}</td>
-                                                            </tr>
-                                                        ))}
+                                                        {fertilizerLogs.slice(0, 15).map((log: any, i: number) => {
+                                                            const dateStr = log.date ? new Date(log.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' }) : '-';
+                                                            const apps: string[] = [];
+                                                            if (log.fungusit) apps.push('🧪 Fungusit');
+                                                            if (log.aminoAsit) apps.push('💧 Amino Asit');
+                                                            if (log.start) apps.push('🚀 Start');
+                                                            if (log.note) apps.push(log.note);
+                                                            return (
+                                                                <tr key={i} className="hover:bg-slate-50">
+                                                                    <td className="px-4 py-3 text-slate-500 font-mono text-xs">{dateStr}</td>
+                                                                    <td className="px-4 py-2">
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {apps.map((a, j) => (
+                                                                                <span key={j} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">{a}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
                                                         {fertilizerLogs.length === 0 && (
-                                                            <tr><td colSpan={3} className="py-8 text-center text-slate-400 italic">Kayıt yok.</td></tr>
+                                                            <tr><td colSpan={2} className="py-8 text-center text-slate-400 italic">Kayıt yok.</td></tr>
                                                         )}
                                                     </tbody>
                                                 </table>
@@ -523,34 +538,39 @@ function TemperatureChart({ data }: { data: any[] }) {
         </div>
     );
 
-    // Sor data by date
-    const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(-10); // Last 10 points
+    // Sort data by date, take last 10 entries
+    const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(-10);
 
-    // Find min/max for scaling
-    const temps = sortedData.flatMap(d => [Number(d.insideTemp || d.innerTemp || 0), Number(d.outsideTemp || d.outerTemp || 0)]);
+    // Extract max temps per day from seraIci/seraDisi
+    const chartData = sortedData.map(d => {
+        const si = d.seraIci || {};
+        const sd = d.seraDisi || {};
+        const insideMax = Math.max(Number(si.sabah || 0), Number(si.ogle || 0), Number(si.aksam || 0));
+        const outsideMax = Math.max(Number(sd.sabah || 0), Number(sd.ogle || 0), Number(sd.aksam || 0));
+        return { date: d.date, insideMax, outsideMax };
+    });
+
+    const temps = chartData.flatMap(d => [d.insideMax, d.outsideMax]);
     const minTemp = Math.min(...temps, 0) - 5;
     const maxTemp = Math.max(...temps, 30) + 5;
     const range = maxTemp - minTemp;
 
-    const height = 200;
-
-    // ViewBox width 1000, Height 200
     const w = 1000;
     const h = 200;
 
-    const getX = (i: number) => (i / (Math.max(sortedData.length - 1, 1))) * w;
+    const getX = (i: number) => (i / (Math.max(chartData.length - 1, 1))) * w;
     const getYPix = (val: number) => h - ((val - minTemp) / range) * h;
 
-    const pathInside = sortedData.map((d, i) => `${getX(i)},${getYPix(Number(d.insideTemp || d.innerTemp || 0))}`).join(' ');
-    const pathOutside = sortedData.map((d, i) => `${getX(i)},${getYPix(Number(d.outsideTemp || d.outerTemp || 0))}`).join(' ');
+    const pathInside = chartData.map((d, i) => `${getX(i)},${getYPix(d.insideMax)}`).join(' ');
+    const pathOutside = chartData.map((d, i) => `${getX(i)},${getYPix(d.outsideMax)}`).join(' ');
 
     return (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sıcaklık Değişimi (Son 10 Kayıt)</h3>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sıcaklık Değişimi (Son 10 Kayıt — Günlük Maks.)</h3>
                 <div className="flex gap-4 text-xs font-bold">
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-orange-500"></div> İç Ortam</div>
-                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Dış Ortam</div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-orange-500"></div> Sera İçi</div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Sera Dışı</div>
                 </div>
             </div>
 
@@ -566,16 +586,16 @@ function TemperatureChart({ data }: { data: any[] }) {
                     <polyline points={pathInside} fill="none" stroke="#f97316" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
                     {/* Dots */}
-                    {sortedData.map((d, i) => (
+                    {chartData.map((d, i) => (
                         <g key={i}>
-                            <circle cx={getX(i)} cy={getYPix(Number(d.outsideTemp || d.outerTemp || 0))} r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
-                            <circle cx={getX(i)} cy={getYPix(Number(d.insideTemp || d.innerTemp || 0))} r="4" fill="white" stroke="#f97316" strokeWidth="2" />
+                            <circle cx={getX(i)} cy={getYPix(d.outsideMax)} r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
+                            <circle cx={getX(i)} cy={getYPix(d.insideMax)} r="4" fill="white" stroke="#f97316" strokeWidth="2" />
 
                             {/* Labels for last point */}
-                            {i === sortedData.length - 1 && (
+                            {i === chartData.length - 1 && (
                                 <>
-                                    <text x={getX(i)} y={getYPix(Number(d.outsideTemp || 0)) - 10} textAnchor="middle" fill="#3b82f6" fontSize="12" fontWeight="bold">{d.outsideTemp || d.outerTemp}°</text>
-                                    <text x={getX(i)} y={getYPix(Number(d.insideTemp || 0)) - 10} textAnchor="middle" fill="#f97316" fontSize="12" fontWeight="bold">{d.insideTemp || d.innerTemp}°</text>
+                                    <text x={getX(i)} y={getYPix(d.outsideMax) - 10} textAnchor="middle" fill="#3b82f6" fontSize="12" fontWeight="bold">{d.outsideMax}°</text>
+                                    <text x={getX(i)} y={getYPix(d.insideMax) - 10} textAnchor="middle" fill="#f97316" fontSize="12" fontWeight="bold">{d.insideMax}°</text>
                                 </>
                             )}
                         </g>
@@ -584,7 +604,7 @@ function TemperatureChart({ data }: { data: any[] }) {
             </div>
 
             <div className="flex justify-between mt-2 text-[10px] text-slate-400 font-mono uppercase">
-                {sortedData.map((d, i) => (
+                {chartData.map((d, i) => (
                     <span key={i}>{new Date(d.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</span>
                 ))}
             </div>

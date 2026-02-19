@@ -113,23 +113,23 @@ export default function RecipesPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#f8fafc]">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8fafc]">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-30 shadow-sm">
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sticky top-0 z-30 shadow-sm">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Reçete & Karışım Yönetimi</h1>
-                        <p className="text-sm text-slate-500 font-medium">Büyük ölçekli uygulamalar için standart reçeteler tanımlayın.</p>
+                        <h1 className="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Reçete & Karışım Yönetimi</h1>
+                        <p className="text-xs lg:text-sm text-slate-500 font-medium">Büyük ölçekli uygulamalar için standart reçeteler tanımlayın.</p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition active:scale-95"
+                        className="bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition active:scale-95 w-full sm:w-auto"
                     >
                         + Yeni Reçete Oluştur
                     </button>
                 </header>
 
-                <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="p-4 lg:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                     {recipes.map((recipe) => (
                         <div key={recipe.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 group hover:border-emerald-200 transition-all flex flex-col relative">
                             <button
@@ -167,8 +167,8 @@ export default function RecipesPage() {
                 </div>
 
                 {isModalOpen && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8 border border-slate-200 max-h-[90vh] overflow-y-auto">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 border border-slate-200 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold text-slate-800 tracking-tight">Yeni Karışım / Reçete Tanımla</h3>
                                 <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl">×</button>

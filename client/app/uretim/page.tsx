@@ -135,99 +135,142 @@ export default function UretimPage() {
     return (
         <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50 font-sans">
             <Sidebar />
-            <main className="flex-1 flex flex-col min-w-0 p-4 lg:p-8">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <main className="flex-1 flex flex-col min-w-0">
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sticky top-0 z-30 shadow-sm">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Üretim & Parti Takibi</h1>
-                        <p className="text-slate-500">Viyol, saksı ve arazi yerleşimlerinin parti (lot) bazlı yönetimi ve maliyet takibi.</p>
+                        <h1 className="text-xl lg:text-2xl font-bold text-slate-900">Üretim & Parti Takibi</h1>
+                        <p className="text-xs lg:text-sm text-slate-500">Viyol, saksı ve arazi yerleşimlerinin parti (lot) bazlı yönetimi ve maliyet takibi.</p>
                     </div>
                     <button
                         onClick={() => setIsNewBatchModalOpen(true)}
-                        className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition"
+                        className="bg-emerald-600 text-white px-5 lg:px-6 py-2.5 lg:py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition w-full sm:w-auto"
                     >
                         + Yeni Parti Başlat
                     </button>
-                </div>
+                </header>
 
-                {/* Batch List Table */}
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
-                                <tr>
-                                    <th className="px-6 py-4">Parti / Lot No</th>
-                                    <th className="px-6 py-4">Ürün & Kaynak</th>
-                                    <th className="px-6 py-4">Konum</th>
-                                    <th className="px-6 py-4">Miktar</th>
-                                    <th className="px-6 py-4">Maliyet (Birim)</th>
-                                    <th className="px-6 py-4 text-right">İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-sm">
-                                {Array.isArray(batches) && batches.map(batch => {
-                                    const totalCost = batch.accumulatedCost || 0;
-                                    const unitCost = batch.quantity > 0 ? totalCost / batch.quantity : 0;
+                <div className="p-4 lg:p-8">
+                    <div className="bg-white rounded-2xl lg:rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                        {/* Desktop Table */}
+                        <div className="hidden lg:block overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th className="px-6 py-4">Parti / Lot No</th>
+                                        <th className="px-6 py-4">Ürün & Kaynak</th>
+                                        <th className="px-6 py-4">Konum</th>
+                                        <th className="px-6 py-4">Miktar</th>
+                                        <th className="px-6 py-4">Maliyet (Birim)</th>
+                                        <th className="px-6 py-4 text-right">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-sm">
+                                    {Array.isArray(batches) && batches.map(batch => {
+                                        const totalCost = batch.accumulatedCost || 0;
+                                        const unitCost = batch.quantity > 0 ? totalCost / batch.quantity : 0;
 
-                                    return (
-                                        <tr key={batch.id} className="hover:bg-slate-50 transition">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-2xl">{batch.stage?.includes('TEPSİ') ? '🌱' : '🪴'}</span>
-                                                    <div>
-                                                        <p className="font-mono font-bold text-emerald-700">{batch.lotId}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase">{batch.startDate ? new Date(batch.startDate).toLocaleDateString('tr-TR') : '-'} Giriş</p>
+                                        return (
+                                            <tr key={batch.id} className="hover:bg-slate-50 transition">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-2xl">{batch.stage?.includes('TEPSİ') ? '🌱' : '🪴'}</span>
+                                                        <div>
+                                                            <p className="font-mono font-bold text-emerald-700">{batch.lotId}</p>
+                                                            <p className="text-[10px] text-slate-400 font-bold uppercase">{batch.startDate ? new Date(batch.startDate).toLocaleDateString('tr-TR') : '-'} Giriş</p>
+                                                        </div>
                                                     </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <p className="font-bold text-slate-800">{batch.name || batch.plantName}</p>
+                                                    <p className="text-[10px] text-slate-500">Anaç: {batch.motherTreeName}</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-block px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600 mb-1">
+                                                        {batch.location}
+                                                    </span>
+                                                    <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
+                                                        <span>📦</span>
+                                                        {batch.subLocation || '-'}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 font-mono font-bold text-slate-700">
+                                                    {batch.quantity} Adet
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-slate-800">{unitCost.toFixed(2)} ₺</span>
+                                                        <button onClick={() => openCostModal(batch)} className="text-[10px] text-emerald-600 hover:underline text-left font-bold">
+                                                            Detay Gör (Top: {totalCost.toFixed(2)} ₺)
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <button
+                                                        onClick={() => openTransplantModal(batch)}
+                                                        className="bg-white border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                                                    >
+                                                        ⇄ Taşı
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                    {batches.length === 0 && (
+                                        <tr>
+                                            <td colSpan={6} className="text-center py-12 text-slate-400 italic">Kayıt bulunamadı.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className="lg:hidden divide-y divide-slate-100">
+                            {Array.isArray(batches) && batches.map(batch => {
+                                const totalCost = batch.accumulatedCost || 0;
+                                const unitCost = batch.quantity > 0 ? totalCost / batch.quantity : 0;
+
+                                return (
+                                    <div key={batch.id} className="p-4">
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-2xl mt-0.5">{batch.stage?.includes('TEPSİ') ? '🌱' : '🪴'}</span>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="font-mono font-bold text-emerald-700 text-sm">{batch.lotId}</span>
+                                                    <span className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-500">{batch.location}</span>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <p className="font-bold text-slate-800">{batch.name || batch.plantName}</p>
-                                                <p className="text-[10px] text-slate-500">Anaç: {batch.motherTreeName}</p>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="inline-block px-2 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-600 mb-1">
-                                                    {batch.location}
-                                                </span>
-                                                <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-                                                    <span>📦</span>
-                                                    {batch.subLocation || '-'}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 font-mono font-bold text-slate-700">
-                                                {batch.quantity} Adet
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-slate-800">{unitCost.toFixed(2)} ₺</span>
-                                                    <button onClick={() => openCostModal(batch)} className="text-[10px] text-emerald-600 hover:underline text-left font-bold">
-                                                        Detay Gör (Top: {totalCost.toFixed(2)} ₺)
+                                                <p className="font-bold text-slate-800 text-sm">{batch.name || batch.plantName}</p>
+                                                <p className="text-[11px] text-slate-400">Anaç: {batch.motherTreeName}</p>
+                                                <div className="flex items-center justify-between mt-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-xs font-bold text-slate-700">{batch.quantity} Adet</span>
+                                                        <button onClick={() => openCostModal(batch)} className="text-[11px] text-emerald-600 font-bold">
+                                                            {unitCost.toFixed(2)} ₺/ad
+                                                        </button>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => openTransplantModal(batch)}
+                                                        className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm active:scale-95"
+                                                    >
+                                                        ⇄ Taşı
                                                     </button>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button
-                                                    onClick={() => openTransplantModal(batch)}
-                                                    className="bg-white border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
-                                                >
-                                                    ⇄ Taşı
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                                {batches.length === 0 && (
-                                    <tr>
-                                        <td colSpan={6} className="text-center py-12 text-slate-400 italic">Kayıt bulunamadı.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                            {batches.length === 0 && (
+                                <div className="text-center py-12 text-slate-400 italic">Kayıt bulunamadı.</div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* New Batch Modal */}
                 {isNewBatchModalOpen && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl max-h-[95vh] overflow-y-auto">
                             <h3 className="text-xl font-bold mb-6">Yeni Üretim Partisi</h3>
                             <div className="space-y-4">
                                 <div>
@@ -272,8 +315,8 @@ export default function UretimPage() {
 
                 {/* Transplant Modal */}
                 {isTransplantModalOpen && selectedBatch && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl max-h-[95vh] overflow-y-auto">
                             <h3 className="text-xl font-bold text-slate-800 mb-6">Transfer & Taşıma</h3>
                             <div className="space-y-4">
                                 <p className="text-sm">Seçilen Parti: <b>{selectedBatch.lotId}</b></p>
@@ -301,8 +344,8 @@ export default function UretimPage() {
 
                 {/* Cost History Modal */}
                 {isCostModalOpen && selectedBatch && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl max-h-[80vh] flex flex-col">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl max-h-[95vh] sm:max-h-[80vh] flex flex-col">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h3 className="text-xl font-bold text-slate-800">Maliyet Geçmişi</h3>

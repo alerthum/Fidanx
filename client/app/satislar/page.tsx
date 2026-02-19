@@ -345,7 +345,8 @@ export default function SatislarPage() {
 
                     {activeTab === 'ORDERS' && (
                         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                            <table className="w-full text-left font-bold text-sm" id="orders-table">
+                            {/* Desktop Table */}
+                            <table className="hidden lg:table w-full text-left font-bold text-sm" id="orders-table">
                                 <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider">
                                     <tr>
                                         <th className="px-6 py-4">Müşteri</th>
@@ -393,13 +394,40 @@ export default function SatislarPage() {
                                     )}
                                 </tbody>
                             </table>
+
+                            {/* Mobile Card View */}
+                            <div className="lg:hidden divide-y divide-slate-100">
+                                {orders.map(o => (
+                                    <div key={o.id} className="p-4">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-bold text-slate-700 text-sm">{o.customerName || 'Belirtilmemiş'}</span>
+                                            <span className="font-mono font-bold text-slate-900 text-sm">₺{(o.totalAmount || 0).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-[10px] text-slate-400 font-mono">{o.orderDate ? new Date(o.orderDate).toLocaleDateString() : '-'}</span>
+                                            <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-black ${o.status === 'Tamamlandı' ? 'bg-emerald-50 text-emerald-600' :
+                                                o.status === 'İptal' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'}`}>{o.status}</span>
+                                        </div>
+                                        {o.status === 'Bekliyor' && (
+                                            <div className="flex gap-2 mt-2">
+                                                <button onClick={() => updateOrderStatus(o.id, 'Tamamlandı')} className="text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg text-[10px] font-bold active:scale-95">✓ Onayla</button>
+                                                <button onClick={() => updateOrderStatus(o.id, 'İptal')} className="text-rose-500 bg-rose-50 px-3 py-1.5 rounded-lg text-[10px] font-bold active:scale-95">× İptal</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                {orders.length === 0 && (
+                                    <div className="px-6 py-12 text-center text-slate-400 italic">Kayıtlı sipariş bulunmuyor.</div>
+                                )}
+                            </div>
                         </div>
                     )}
 
 
                     {activeTab === 'CUSTOMERS' && (
                         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                            <table className="w-full text-left" id="customers-table">
+                            {/* Desktop Table */}
+                            <table className="hidden lg:table w-full text-left" id="customers-table">
                                 <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
                                     <tr>
                                         <th className="px-6 py-4">Müşteri / Firma</th>
@@ -453,6 +481,34 @@ export default function SatislarPage() {
                                     )}
                                 </tbody>
                             </table>
+
+                            {/* Mobile Card View */}
+                            <div className="lg:hidden divide-y divide-slate-100">
+                                {customers.map(c => (
+                                    <div key={c.id} className="p-4">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <div>
+                                                <p className="font-bold text-slate-700 text-sm">{c.name}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase">{c.type || 'Bireysel'}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => openEditCustomer(c)}
+                                                className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-[10px] font-bold active:scale-95"
+                                            >
+                                                ✏️ Düzenle
+                                            </button>
+                                        </div>
+                                        <div className="text-[11px] text-slate-500 space-y-0.5">
+                                            {c.phone && <p>📞 {c.phone}</p>}
+                                            {c.email && <p>✉️ {c.email}</p>}
+                                            {c.taxId && <p className="font-mono text-slate-400">VKN: {c.taxId}</p>}
+                                        </div>
+                                    </div>
+                                ))}
+                                {customers.length === 0 && (
+                                    <div className="px-6 py-12 text-center text-slate-400 italic">Kayıtlı müşteri yok.</div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

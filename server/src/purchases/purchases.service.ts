@@ -80,9 +80,17 @@ export class PurchasesService {
                 const matDoc = await materialRef.get();
                 if (matDoc.exists) {
                     const currentStock = matDoc.data()?.currentStock || 0;
-                    await materialRef.update({
+
+                    const updateData: any = {
                         currentStock: currentStock + (Number(item.amount) || 0)
-                    });
+                    };
+
+                    // Update supplierId if present in the order
+                    if (order.supplierId) {
+                        updateData.supplierId = order.supplierId;
+                    }
+
+                    await materialRef.update(updateData);
                 }
             }
         }
@@ -93,6 +101,34 @@ export class PurchasesService {
             icon: '📥',
             color: 'bg-emerald-50 text-emerald-600'
         });
+    }
+
+    async fixPlantSuppliers(tenantId: string) {
+        const purchasesSnapshot = await this.collection(tenantId).get();
+        let count = 0;
+        const updates: Promise<any>[] = [];
+
+        for (const doc of purchasesSnapshot.docs) {
+            const purchase = doc.data();
+            // Check if purchase has supplierId and items
+            if (purchase.supplierId && purchase.items && Array.isArray(purchase.items)) {
+                for (const item of purchase.items) {
+                    if (item.materialId) {
+                        // We update the plant's supplierId to match the purchase's supplierId
+                        // Note: If a plant is in multiple purchases, the last one processed (random order here) wins.
+                        // Ideally we might want the *latest* purchase, but for this fix we assume consistency or 'latest wins' naturally if ordered by date (default usually insertion order or random).
+                        // Let's rely on iteration.
+
+                        const plantRef = this.firebase.db.collection('tenants').doc(tenantId).collection('plants').doc(item.materialId);
+                        updates.push(plantRef.update({ supplierId: purchase.supplierId }));
+                        count++;
+                    }
+                }
+            }
+        }
+
+        await Promise.all(updates);
+        return { message: `${count} stok/kalem için tedarikçi bilgisi işlendi.` };
     }
 
     async delete(tenantId: string, id: string) {

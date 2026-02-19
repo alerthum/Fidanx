@@ -18,12 +18,25 @@ export default function AyarlarPage() {
     const [measurementParams, setMeasurementParams] = useState<string[]>(['Sıcaklık', 'Nem']);
     const [newExpenseType, setNewExpenseType] = useState('');
     const [newMeasurementParam, setNewMeasurementParam] = useState('');
+    const [backups, setBackups] = useState<any[]>([]);
+    const [isBackingUp, setIsBackingUp] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [backupName, setBackupName] = useState('');
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
 
     useEffect(() => {
         fetchSettings();
+        fetchBackups();
     }, []);
+
+    const fetchBackups = async () => {
+        try {
+            const res = await fetch(`${API_URL}/seed/backups?tenantId=demo-tenant`);
+            const data = await res.json();
+            setBackups(data);
+        } catch (err) { }
+    };
 
     const fetchSettings = async () => {
         try {
@@ -167,6 +180,120 @@ export default function AyarlarPage() {
         const newList = measurementParams.filter(x => x !== m);
         setMeasurementParams(newList);
         handleSaveSettings(undefined, undefined, undefined, undefined, undefined, newList);
+    };
+
+    const handleBackup = async () => {
+        setIsBackingUp(true);
+        try {
+            const name = backupName || `yedek_${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}`;
+            const res = await fetch(`${API_URL}/seed/backup/save?tenantId=demo-tenant`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }),
+            });
+            const result = await res.json();
+            if (res.ok) {
+                alert(`✅ Yedek başarıyla alındı!\n\n📦 İsim: ${result.name}\n📄 Toplam Kayıt: ${result.totalDocuments}`);
+                setBackupName('');
+                fetchBackups();
+            } else {
+                alert('Yedek oluşturulurken hata oluştu.');
+            }
+        } catch (err) {
+            alert('Sunucuya bağlanılamadı.');
+        } finally {
+            setIsBackingUp(false);
+        }
+    };
+
+    const handleDownloadBackup = async () => {
+        try {
+            const res = await fetch(`${API_URL}/seed/backup?tenantId=demo-tenant`);
+            const data = await res.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fidanx_yedek_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('Yedek indirilemedi.');
+        }
+    };
+
+    const handleRestoreFromBackup = async (backupNameToRestore: string) => {
+        const password = prompt('Geri yükleme için yönetici parolasını girin:');
+        if (password !== 'fidanx') {
+            if (password !== null) alert('Hatalı parola!');
+            return;
+        }
+        if (!confirm(`⚠️ "${backupNameToRestore}" yedeği geri yüklenecek.\n\nMevcut tüm veriler silinip yerine yedek verileri yazılacaktır.\n\nDevam etmek istiyor musunuz?`)) return;
+
+        setIsRestoring(true);
+        try {
+            const res = await fetch(`${API_URL}/seed/restore?tenantId=demo-tenant`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ backupName: backupNameToRestore }),
+            });
+            const result = await res.json();
+            if (result.error) {
+                alert('Hata: ' + result.error);
+            } else {
+                alert(`✅ Yedek başarıyla geri yüklendi!\n\n📄 Toplam Geri Yüklenen: ${result.totalRestored} kayıt`);
+                fetchSettings();
+            }
+        } catch (err) {
+            alert('Sunucuya bağlanılamadı.');
+        } finally {
+            setIsRestoring(false);
+        }
+    };
+
+    const handleRestoreFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const password = prompt('Geri yükleme için yönetici parolasını girin:');
+        if (password !== 'fidanx') {
+            if (password !== null) alert('Hatalı parola!');
+            return;
+        }
+        if (!confirm('⚠️ Dosyadan geri yükleme yapılacak.\n\nMevcut tüm veriler silinip yerine dosyadaki veriler yazılacaktır.\n\nDevam etmek istiyor musunuz?')) return;
+
+        setIsRestoring(true);
+        try {
+            const text = await file.text();
+            const backupData = JSON.parse(text);
+            const res = await fetch(`${API_URL}/seed/restore?tenantId=demo-tenant`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ backupData }),
+            });
+            const result = await res.json();
+            if (result.error) {
+                alert('Hata: ' + result.error);
+            } else {
+                alert(`✅ Dosyadan geri yükleme başarılı!\n\n📄 Toplam Geri Yüklenen: ${result.totalRestored} kayıt`);
+                fetchSettings();
+            }
+        } catch (err) {
+            alert('Dosya okunamadı veya sunucuya bağlanılamadı.');
+        } finally {
+            setIsRestoring(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleDeleteBackup = async (name: string) => {
+        if (!confirm(`"${name}" yedeği silinecek. Emin misiniz?`)) return;
+        try {
+            await fetch(`${API_URL}/seed/backups/${encodeURIComponent(name)}?tenantId=demo-tenant`, { method: 'DELETE' });
+            fetchBackups();
+        } catch (err) {
+            alert('Yedek silinemedi.');
+        }
     };
 
     return (
@@ -388,6 +515,118 @@ export default function AyarlarPage() {
                             >
                                 Ekle
                             </button>
+                        </div>
+                    </div>
+
+                    {/* ═══ Yedekleme & Geri Yükleme ═══ */}
+                    <div className="xl:col-span-2 space-y-6">
+                        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-8 rounded-2xl border border-emerald-200 shadow-sm overflow-hidden relative">
+                            <div className="absolute right-[-10px] top-[-10px] text-[80px] opacity-[0.06] pointer-events-none">💾</div>
+                            <h3 className="font-black text-emerald-800 uppercase text-[10px] tracking-[0.2em] mb-4">Veritabanı Yedek Al</h3>
+                            <p className="text-xs text-emerald-700 font-medium mb-6">Tüm verilerin anlık bir kopyasını oluşturun. Yedekler Firestore'da saklanır ve istediğiniz zaman geri yüklenebilir.</p>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <input
+                                    type="text"
+                                    value={backupName}
+                                    onChange={(e) => setBackupName(e.target.value)}
+                                    className="flex-1 px-4 py-3 rounded-xl border border-emerald-200 text-sm outline-none focus:border-emerald-500 shadow-sm transition bg-white/80"
+                                    placeholder="Yedek adı (boş bırakılırsa otomatik)"
+                                />
+                                <button
+                                    onClick={handleBackup}
+                                    disabled={isBackingUp}
+                                    className="bg-emerald-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition active:scale-95 shadow-lg shadow-emerald-200 disabled:opacity-50 whitespace-nowrap"
+                                >
+                                    {isBackingUp ? '⏳ Yedekleniyor...' : '💾 Yedek Al'}
+                                </button>
+                                <button
+                                    onClick={handleDownloadBackup}
+                                    className="bg-white text-emerald-700 border border-emerald-200 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-50 transition active:scale-95 shadow-sm whitespace-nowrap"
+                                >
+                                    ⬇ JSON İndir
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Kayıtlı Yedekler Listesi */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="p-6 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+                                <h3 className="font-black text-slate-500 uppercase text-[10px] tracking-[0.2em]">Kayıtlı Yedekler</h3>
+                                <span className="text-[9px] font-bold text-slate-400 bg-white px-2 py-1 rounded border border-slate-200">{backups.length} Yedek</span>
+                            </div>
+                            {backups.length > 0 ? (
+                                <table className="w-full text-left text-sm border-collapse">
+                                    <thead className="bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
+                                        <tr>
+                                            <th className="px-6 py-3">Yedek Adı</th>
+                                            <th className="px-6 py-3">Tarih</th>
+                                            <th className="px-6 py-3 text-center">Kayıt Sayısı</th>
+                                            <th className="px-6 py-3 text-right">İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {backups.map((b, i) => (
+                                            <tr key={i} className="hover:bg-slate-50/80 transition group">
+                                                <td className="px-6 py-4">
+                                                    <p className="font-bold text-slate-700 leading-tight text-xs">{b.name}</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <p className="text-xs text-slate-500">
+                                                        {b.savedAt?._seconds
+                                                            ? new Date(b.savedAt._seconds * 1000).toLocaleString('tr-TR')
+                                                            : b.backupDate
+                                                                ? new Date(b.backupDate).toLocaleString('tr-TR')
+                                                                : '-'}
+                                                    </p>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full text-[9px] font-black border border-emerald-100">
+                                                        {b.totalDocuments} kayıt
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex gap-2 justify-end">
+                                                        <button
+                                                            onClick={() => handleRestoreFromBackup(b.name)}
+                                                            disabled={isRestoring}
+                                                            className="text-amber-600 hover:bg-amber-50 px-3 py-1.5 rounded-lg transition text-[10px] font-black uppercase tracking-widest border border-amber-200 disabled:opacity-50"
+                                                        >
+                                                            {isRestoring ? '⏳' : '↩ Geri Yükle'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteBackup(b.name)}
+                                                            className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition text-[10px] font-black uppercase tracking-widest border border-slate-200 hover:border-rose-200"
+                                                        >
+                                                            ✕ Sil
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="py-12 text-center text-slate-400 italic text-xs">
+                                    Henüz kayıtlı yedek bulunmuyor.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Dosyadan Geri Yükleme */}
+                        <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-8 rounded-2xl border border-amber-200 shadow-sm overflow-hidden relative">
+                            <div className="absolute right-[-10px] top-[-10px] text-[80px] opacity-[0.06] pointer-events-none">📂</div>
+                            <h3 className="font-black text-amber-800 uppercase text-[10px] tracking-[0.2em] mb-2">Dosyadan Geri Yükle</h3>
+                            <p className="text-xs text-amber-700 font-medium mb-4">Daha önce indirdiğiniz JSON yedek dosyasından geri yükleme yapın.</p>
+                            <label className="relative cursor-pointer inline-flex items-center gap-2 bg-white text-amber-700 border border-amber-200 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all shadow-sm active:scale-95">
+                                <span>{isRestoring ? '⏳ Yükleniyor...' : '📂 JSON Dosyası Seç'}</span>
+                                <input
+                                    type="file"
+                                    accept=".json"
+                                    onChange={handleRestoreFromFile}
+                                    disabled={isRestoring}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                />
+                            </label>
                         </div>
                     </div>
 

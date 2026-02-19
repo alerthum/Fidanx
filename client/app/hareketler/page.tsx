@@ -88,14 +88,14 @@ export default function HareketlerPage() {
         <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8fafc]">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-30 shadow-sm">
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-5 flex justify-between items-center sticky top-0 z-30 shadow-sm">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Operasyon & Hareket</h1>
-                        <p className="text-sm text-slate-500">Üretim partilerinin konum transferleri ve hareket kayıtları.</p>
+                        <h1 className="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Operasyon & Hareket</h1>
+                        <p className="text-xs lg:text-sm text-slate-500">Üretim partilerinin konum transferleri ve hareket kayıtları.</p>
                     </div>
                 </header>
 
-                <div className="p-8">
+                <div className="p-4 lg:p-8">
                     {/* Batches List regarding Location */}
                     <div className="space-y-6">
                         {locations.map(location => {
@@ -111,18 +111,18 @@ export default function HareketlerPage() {
 
                             return (
                                 <div key={location} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                                    <div className="bg-slate-50 border-b border-slate-200 px-4 lg:px-6 py-3 lg:py-4 flex justify-between items-center">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xl">
+                                            <span className="text-lg lg:text-xl">
                                                 {location.includes('Sera') ? '🌡️' : location.includes('Depo') ? '📦' : '🚜'}
                                             </span>
-                                            <h3 className="font-bold text-slate-700">{location}</h3>
-                                            <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-xs font-bold">{locationBatches.length} Parti</span>
+                                            <h3 className="font-bold text-slate-700 text-sm lg:text-base">{location}</h3>
+                                            <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] lg:text-xs font-bold">{locationBatches.length} Parti</span>
                                         </div>
                                     </div>
                                     <div className="divide-y divide-slate-100">
                                         {locationBatches.map(batch => (
-                                            <div key={batch.id} className="p-6 hover:bg-slate-50/50 transition flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                                            <div key={batch.id} className="p-4 lg:p-6 hover:bg-slate-50/50 transition flex flex-col sm:flex-row gap-3 lg:gap-4 justify-between items-start sm:items-center">
                                                 <div>
                                                     <div className="flex items-center gap-3 mb-1">
                                                         <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded uppercase tracking-wider">{batch.lotId}</span>
@@ -167,8 +167,8 @@ export default function HareketlerPage() {
 
                 {/* Transfer Modal */}
                 {isTransferModalOpen && selectedBatch && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 border border-slate-200 max-h-[95vh] overflow-y-auto">
                             <h3 className="text-xl font-bold text-slate-800 mb-2 tracking-tight">Konum Transferi</h3>
                             <p className="text-sm text-slate-500 mb-6">
                                 <span className="font-bold text-slate-700">{selectedBatch.lotId}</span> numaralı parti <span className="font-bold text-slate-700">{selectedBatch.location || 'Depo'}</span> konumundan taşınıyor.

@@ -1,4 +1,4 @@
-import { Controller, Delete, Query, Post } from '@nestjs/common';
+import { Controller, Delete, Query, Post, Get, Body, Param } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 
 @Controller('seed')
@@ -460,5 +460,153 @@ export class SeedController {
         }
 
         return { message: `${tenantId} verileri başarıyla temizlendi.` };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  YEDEK AL (Backup) — Tüm koleksiyonları JSON olarak dışa aktar
+    // ═══════════════════════════════════════════════════════════════
+    @Get('backup')
+    async backup(@Query('tenantId') tenantId: string) {
+        const tenantRef = this.firebase.db.collection('tenants').doc(tenantId);
+        const cols = ['plants', 'production', 'recipes', 'customers', 'orders', 'expenses', 'activity_logs', 'purchases', 'fertilizer_logs', 'temperature_logs', 'support_tickets', 'configs'];
+
+        const snapshot: Record<string, any[]> = {};
+
+        for (const col of cols) {
+            const snap = await tenantRef.collection(col).get();
+            snapshot[col] = snap.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
+        }
+
+        // Also backup the tenant document itself (settings etc.)
+        const tenantDoc = await tenantRef.get();
+        const tenantData = tenantDoc.exists ? tenantDoc.data() : {};
+
+        return {
+            tenantId,
+            tenantData,
+            collections: snapshot,
+            backupDate: new Date().toISOString(),
+            totalDocuments: Object.values(snapshot).reduce((sum, arr) => sum + arr.length, 0),
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  YEDEK KAYDET (Save backup to Firestore)
+    // ═══════════════════════════════════════════════════════════════
+    @Post('backup/save')
+    async saveBackup(@Query('tenantId') tenantId: string, @Body() body: { name?: string }) {
+        const backupData = await this.backup(tenantId);
+        const backupName = body.name || `yedek_${new Date().toISOString().replace(/[:.]/g, '-')}`;
+
+        const tenantRef = this.firebase.db.collection('tenants').doc(tenantId);
+        await tenantRef.collection('backups').doc(backupName).set({
+            ...backupData,
+            name: backupName,
+            savedAt: new Date(),
+        });
+
+        return { message: `Yedek "${backupName}" başarıyla kaydedildi.`, name: backupName, totalDocuments: backupData.totalDocuments };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  YEDEK LİSTELE (List saved backups)
+    // ═══════════════════════════════════════════════════════════════
+    @Get('backups')
+    async listBackups(@Query('tenantId') tenantId: string) {
+        const tenantRef = this.firebase.db.collection('tenants').doc(tenantId);
+        const snap = await tenantRef.collection('backups').orderBy('savedAt', 'desc').get();
+        return snap.docs.map(doc => ({
+            name: doc.id,
+            savedAt: doc.data().savedAt,
+            totalDocuments: doc.data().totalDocuments || 0,
+            backupDate: doc.data().backupDate,
+        }));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  YEDEK SİL (Delete a specific backup)
+    // ═══════════════════════════════════════════════════════════════
+    @Delete('backups/:name')
+    async deleteBackup(@Query('tenantId') tenantId: string, @Param('name') name: string) {
+        const tenantRef = this.firebase.db.collection('tenants').doc(tenantId);
+        await tenantRef.collection('backups').doc(name).delete();
+        return { message: `Yedek "${name}" silindi.` };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  YEDEKTEN GERİ YÜKLEMİ (Restore) — JSON'dan geri yükle
+    // ═══════════════════════════════════════════════════════════════
+    @Post('restore')
+    async restore(@Query('tenantId') tenantId: string, @Body() body: { backupName?: string; backupData?: any }) {
+        let data: any;
+
+        if (body.backupName) {
+            // Restore from saved backup
+            const tenantRef = this.firebase.db.collection('tenants').doc(tenantId);
+            const backupDoc = await tenantRef.collection('backups').doc(body.backupName).get();
+            if (!backupDoc.exists) {
+                return { error: `Yedek "${body.backupName}" bulunamadı.` };
+            }
+            data = backupDoc.data();
+        } else if (body.backupData) {
+            data = body.backupData;
+        } else {
+            return { error: 'Yedek verisi bulunamadı.' };
+        }
+
+        if (!data || !data.collections) {
+            return { error: 'Geçersiz yedek formatı.' };
+        }
+
+        const tenantRef = this.firebase.db.collection('tenants').doc(tenantId);
+
+        // 1. Clear existing data
+        await this.clear(tenantId);
+
+        // 2. Restore tenant document (settings etc.)
+        if (data.tenantData) {
+            await tenantRef.set(data.tenantData, { merge: true });
+        }
+
+        // 3. Restore all collections
+        let totalRestored = 0;
+        for (const [colName, docs] of Object.entries(data.collections)) {
+            if (!Array.isArray(docs)) continue;
+
+            // Firestore batch limit is 500
+            const chunks: any[][] = [];
+            let currentChunk: any[] = [];
+            docs.forEach((doc: any) => {
+                currentChunk.push(doc);
+                if (currentChunk.length === 499) {
+                    chunks.push(currentChunk);
+                    currentChunk = [];
+                }
+            });
+            if (currentChunk.length > 0) chunks.push(currentChunk);
+
+            for (const chunk of chunks) {
+                const batch = this.firebase.db.batch();
+                for (const doc of chunk) {
+                    const docId = doc._id;
+                    const docData = { ...doc };
+                    delete docData._id;
+
+                    if (docId) {
+                        batch.set(tenantRef.collection(colName).doc(docId), docData);
+                    } else {
+                        const newRef = tenantRef.collection(colName).doc();
+                        batch.set(newRef, docData);
+                    }
+                    totalRestored++;
+                }
+                await batch.commit();
+            }
+        }
+
+        return {
+            message: `Yedek başarıyla geri yüklendi.`,
+            totalRestored,
+        };
     }
 }

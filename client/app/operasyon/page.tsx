@@ -113,39 +113,39 @@ export default function OperationsPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#f8fafc]">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8fafc]">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="bg-white border-b border-slate-200 px-8 py-5 sticky top-0 z-30 shadow-sm">
-                    <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Günlük Bahçe İşleri & Operasyon</h1>
-                    <p className="text-sm text-slate-500 font-medium">Sera ve bahçelerde yapılan işlemleri kayıt altına alın.</p>
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-5 sticky top-0 z-30 shadow-sm">
+                    <h1 className="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Günlük Bahçe İşleri & Operasyon</h1>
+                    <p className="text-xs lg:text-sm text-slate-500 font-medium">Sera ve bahçelerde yapılan işlemleri kayıt altına alın.</p>
                 </header>
 
-                <div className="p-8 grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="p-4 lg:p-8 grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-8">
                     {/* LEFT COLUMN: ACTION FORM */}
                     <div className="xl:col-span-1 space-y-6">
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="flex border-b border-slate-200">
                                 <button
                                     onClick={() => setActiveTab('app')}
-                                    className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition ${activeTab === 'app' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}
+                                    className={`flex-1 py-3 lg:py-4 text-xs font-black uppercase tracking-widest transition ${activeTab === 'app' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}
                                 >
                                     💧 Uygulama
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('maintenance')}
-                                    className={`flex-1 py-4 text-xs font-black uppercase tracking-widest transition ${activeTab === 'maintenance' ? 'bg-amber-50 text-amber-600' : 'text-slate-400 hover:bg-slate-50'}`}
+                                    className={`flex-1 py-3 lg:py-4 text-xs font-black uppercase tracking-widest transition ${activeTab === 'maintenance' ? 'bg-amber-50 text-amber-600' : 'text-slate-400 hover:bg-slate-50'}`}
                                 >
                                     🚜 Bakım
                                 </button>
                             </div>
 
-                            <div className="p-6">
-                                <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="p-4 lg:p-6">
+                                <form onSubmit={handleSubmit} className="space-y-5 lg:space-y-6">
 
                                     {/* DATE PICKER */}
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">📅 İşlem Tarihi</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 lg:mb-3">📅 İşlem Tarihi</label>
                                         <input
                                             type="date"
                                             className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500 text-sm font-bold bg-slate-50"
@@ -156,7 +156,7 @@ export default function OperationsPage() {
 
                                     {/* LOCATION SELECTOR */}
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Uygulama Konumu (Çoklu Seçim)</label>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 lg:mb-3">Uygulama Konumu (Çoklu Seçim)</label>
                                         <div className="flex flex-wrap gap-2">
                                             {(settings.locations || ['Sera 1', 'Sera 2', 'Açık Alan']).map((loc: string) => (
                                                 <button
@@ -233,7 +233,7 @@ export default function OperationsPage() {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className={`w-full py-4 rounded-xl font-bold shadow-lg text-white transition active:scale-95 text-lg uppercase tracking-wide
+                                        className={`w-full py-4 rounded-xl font-bold shadow-lg text-white transition active:scale-95 text-base lg:text-lg uppercase tracking-wide
                                             ${activeTab === 'app' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' :
                                                 'bg-amber-600 hover:bg-amber-700 shadow-amber-200'}`}
                                     >
@@ -247,52 +247,87 @@ export default function OperationsPage() {
                     {/* RIGHT COLUMN: HISTORY */}
                     <div className="xl:col-span-2">
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full max-h-[800px]">
-                            <div className="p-6 border-b border-slate-200 bg-slate-50">
+                            <div className="p-4 lg:p-6 border-b border-slate-200 bg-slate-50">
                                 <h3 className="font-bold text-slate-700">Son İşlem Kayıtları</h3>
                             </div>
                             <div className="flex-1 overflow-y-auto p-0">
                                 {logs.length === 0 ? (
                                     <div className="p-10 text-center text-slate-400 italic">Henüz kayıt bulunamadı.</div>
                                 ) : (
-                                    <table className="w-full text-left border-collapse">
-                                        <thead className="bg-slate-50 text-[10px] uppercase font-black text-slate-400 tracking-widest sticky top-0">
-                                            <tr>
-                                                <th className="px-6 py-4">Tarih</th>
-                                                <th className="px-6 py-4">İşlem</th>
-                                                <th className="px-6 py-4">Konum</th>
-                                                <th className="px-6 py-4">Detay</th>
-                                                <th className="px-6 py-4 text-right">Maliyet</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm">
-                                            {logs.map(log => (
-                                                <tr key={log.id} className="hover:bg-slate-50 transition">
-                                                    <td className="px-6 py-4 font-medium text-slate-500 whitespace-nowrap">
-                                                        {new Date(log.date || log.timestamp).toLocaleString('tr-TR')}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg ${log.color || 'bg-slate-100'}`}>
-                                                                {log.icon || '📝'}
-                                                            </span>
-                                                            <span className="font-bold text-slate-700">{log.title}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        {log.locations?.map((l: string) => (
-                                                            <span key={l} className="inline-block bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded mr-1 font-bold">{l}</span>
-                                                        ))}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-600 max-w-xs truncate">
-                                                        {log.details || '-'}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right font-bold text-slate-700">
-                                                        {log.cost ? `${log.cost} ₺` : '-'}
-                                                    </td>
+                                    <>
+                                        {/* Desktop Table - hidden on mobile */}
+                                        <table className="hidden lg:table w-full text-left border-collapse">
+                                            <thead className="bg-slate-50 text-[10px] uppercase font-black text-slate-400 tracking-widest sticky top-0">
+                                                <tr>
+                                                    <th className="px-6 py-4">Tarih</th>
+                                                    <th className="px-6 py-4">İşlem</th>
+                                                    <th className="px-6 py-4">Konum</th>
+                                                    <th className="px-6 py-4">Detay</th>
+                                                    <th className="px-6 py-4 text-right">Maliyet</th>
                                                 </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 text-sm">
+                                                {logs.map(log => (
+                                                    <tr key={log.id} className="hover:bg-slate-50 transition">
+                                                        <td className="px-6 py-4 font-medium text-slate-500 whitespace-nowrap">
+                                                            {new Date(log.date || log.timestamp).toLocaleString('tr-TR')}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg ${log.color || 'bg-slate-100'}`}>
+                                                                    {log.icon || '📝'}
+                                                                </span>
+                                                                <span className="font-bold text-slate-700">{log.title}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            {log.locations?.map((l: string) => (
+                                                                <span key={l} className="inline-block bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded mr-1 font-bold">{l}</span>
+                                                            ))}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-slate-600 max-w-xs truncate">
+                                                            {log.details || '-'}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right font-bold text-slate-700">
+                                                            {log.cost ? `${log.cost} ₺` : '-'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+
+                                        {/* Mobile Card View */}
+                                        <div className="lg:hidden divide-y divide-slate-100">
+                                            {logs.map(log => (
+                                                <div key={log.id} className="p-4 hover:bg-slate-50/80 transition">
+                                                    <div className="flex items-start gap-3">
+                                                        <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${log.color || 'bg-slate-100'}`}>
+                                                            {log.icon || '📝'}
+                                                        </span>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-bold text-slate-700 text-sm">{log.title}</p>
+                                                            <p className="text-[11px] text-slate-400 mt-0.5">
+                                                                {new Date(log.date || log.timestamp).toLocaleString('tr-TR')}
+                                                            </p>
+                                                            {log.details && (
+                                                                <p className="text-xs text-slate-500 mt-1 line-clamp-2">{log.details}</p>
+                                                            )}
+                                                            <div className="flex items-center justify-between mt-2">
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {log.locations?.map((l: string) => (
+                                                                        <span key={l} className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded font-bold">{l}</span>
+                                                                    ))}
+                                                                </div>
+                                                                {log.cost && (
+                                                                    <span className="font-bold text-emerald-600 text-sm">{log.cost} ₺</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             ))}
-                                        </tbody>
-                                    </table>
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         </div>

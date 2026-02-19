@@ -10,6 +10,11 @@ export class PurchasesController {
         return this.service.create(tenantId, body);
     }
 
+    @Post('fix-suppliers')
+    fixSuppliers(@Query('tenantId') tenantId: string) {
+        return this.service.fixPlantSuppliers(tenantId);
+    }
+
     @Get()
     findAll(@Query('tenantId') tenantId: string) {
         return this.service.findAll(tenantId);

@@ -89,8 +89,8 @@ export default function DashboardPage() {
         totalStock: Array.isArray(plants) ? plants.reduce((acc: number, p: any) => acc + (p.currentStock || 0), 0) : 0,
         totalOrders: Array.isArray(orders) ? orders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0) : 0,
         totalExpenses: Array.isArray(expenses) ? expenses.reduce((acc: number, e: any) => acc + (parseFloat(e.amount) || 0), 0) : 0,
-        viyolCount: Array.isArray(plants) ? plants.filter((p: any) => p.type === 'VIYOL' || p.type === 'TOHUM').reduce((acc: number, p: any) => acc + (p.currentStock || 0), 0) : 0,
-        celikCount: Array.isArray(plants) ? plants.filter((p: any) => p.type === 'CELIK' || p.type === 'FIDAN').reduce((acc: number, p: any) => acc + (p.currentStock || 0), 0) : 0
+        viyolCount: Array.isArray(plants) ? plants.reduce((acc: number, p: any) => acc + (p.viyolCount || 0), 0) : 0,
+        celikCount: Array.isArray(plants) ? plants.reduce((acc: number, p: any) => acc + (p.cuttingCount || 0), 0) : 0
       });
 
       // Calculate Health Status (Simplified Logic based on Production Batches)

@@ -27,6 +27,9 @@ export class PlantsService {
         retailPrice?: number; // Perakende Fiyat
         purchasePrice?: number; // Alış Fiyatı (Birim Maliyet)
         criticalStock?: number; // Kritik Stok Seviyesi
+        supplierId?: string; // Tedarikçi Firma ID
+        potType?: string; // Saksı Tipi (ör: 14'lük, 16'lık)
+        turkishName?: string; // Türkçe İsim (Yeni)
     }) {
         const docRef = await this.plants(tenantId).add({
             ...data,
