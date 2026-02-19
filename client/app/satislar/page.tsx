@@ -38,7 +38,7 @@ export default function SatislarPage() {
         zipCode: ''
     });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
     React.useEffect(() => {
         fetchCustomers();

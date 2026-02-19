@@ -14,7 +14,7 @@ export default function RaporlarPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeSection, setActiveSection] = useState<'overview' | 'monthly' | 'cost' | 'operations'>('overview');
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
     useEffect(() => {
         fetchAllData();

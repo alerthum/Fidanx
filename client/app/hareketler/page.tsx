@@ -10,7 +10,7 @@ export default function HareketlerPage() {
     const [transferData, setTransferData] = useState({ targetLocation: 'Sera 1', note: '' });
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
     useEffect(() => {
         fetchInitialData();

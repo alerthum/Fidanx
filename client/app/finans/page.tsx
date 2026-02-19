@@ -19,7 +19,7 @@ export default function FinansPage() {
 
     const categories = ['Enerji', 'İşçilik', 'Bakım/Onarım', 'Lojistik', 'Kira', 'Vergi', 'Diğer'];
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
     useEffect(() => {
         fetchData();

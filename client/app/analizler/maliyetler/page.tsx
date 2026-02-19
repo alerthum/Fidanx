@@ -8,7 +8,7 @@ export default function MaliyetAnalizPage() {
     const [analytics, setAnalytics] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
     useEffect(() => {
         fetchData();

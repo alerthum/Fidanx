@@ -31,7 +31,7 @@ export default function UretimPage() {
         targetStage: 'KÜÇÜK_SAKSI'
     });
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
     const stages = [
         { id: 'TEPSİ', name: 'Tepsi / Viyol' },
