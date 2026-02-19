@@ -4,10 +4,12 @@ import React from 'react';
 interface ExportButtonProps {
     title: string;
     tableId: string;
+    iconOnly?: boolean;
 }
 
-export default function ExportButton({ title, tableId }: ExportButtonProps) {
+export default function ExportButton({ title, tableId, iconOnly }: ExportButtonProps) {
     const handleExport = () => {
+        // ... (Export logic same as existing)
         const printContents = document.getElementById(tableId)?.innerHTML;
         if (!printContents) return;
 
@@ -50,9 +52,11 @@ export default function ExportButton({ title, tableId }: ExportButtonProps) {
     return (
         <button
             onClick={handleExport}
-            className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-black shadow-sm hover:bg-slate-50 transition active:scale-95 flex items-center gap-2 uppercase tracking-widest"
+            className={`${iconOnly ? 'w-10 h-10 p-0 rounded-full flex items-center justify-center' : 'px-4 py-2 rounded-xl flex items-center gap-2'} bg-white border border-slate-200 text-slate-600 text-xs font-black shadow-sm hover:bg-slate-50 transition active:scale-95 uppercase tracking-widest group`}
+            title="PDF Olarak Kaydet / Yazdır"
         >
-            <span>📄</span> PDF / YAZDIR
+            <span className={`${iconOnly ? 'text-lg transform group-hover:scale-110 transition' : ''}`}>📄</span>
+            {!iconOnly && "PDF / YAZDIR"}
         </button>
     );
 }

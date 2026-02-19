@@ -38,7 +38,7 @@ Aşağıda yapılan tüm değişikliklerin ve yeni özelliklerin detaylı bir ö
 *   **Verimlilik Göstergesi:** Partiler arası maliyet kıyaslaması sunar.
     *   *Dosyalar:* `/app/analizler/maliyetler/page.tsx`, `CostingService`
 
-### **� Barkod ve İzlenebilirlik Sistemi**
+### **🔍 Barkod ve İzlenebilirlik Sistemi**
 *   **Görsel Barkod:** Üretim listesinde her parti için `LOT ID` üzerinden üretilen görsel barkodlar eklendi.
 *   **Hızlı Tarama:** Üst menüye eklenen barkod arama kutusu ile:
     *   El terminali veya barkod okuyucu ile okutma yapabilirsiniz.
@@ -46,7 +46,7 @@ Aşağıda yapılan tüm değişikliklerin ve yeni özelliklerin detaylı bir ö
 *   **Aksiyon:** Barkod okutulduğunda doğrudan **"Şaşırtma / Saksı Değişimi"** ekranı açılır. Böylece sahadaki personel sadece okutup, yeni saksı tipini seçerek ilerleyebilir.
 *   *Dosyalar:* `/app/uretim/page.tsx`
 
-### **�🚜 Operasyon & Hareket**
+### **🚛 Operasyon & Hareket**
 *   **Konum Transferi:** Üretim partilerini (Depo -> Sera 1 -> Açık Alan) fiziksel olarak taşıma ve takip etme özelliği.
 *   **Parti Geçmişi:** Bir partinin hangi tarihte nereye taşındığını gösteren tarihçe.
     *   *Dosyalar:* `/app/hareketler/page.tsx`
@@ -63,6 +63,28 @@ Aşağıda yapılan tüm değişikliklerin ve yeni özelliklerin detaylı bir ö
     *   Sera Konumları ve Üretim Safhaları artık veritabanındaki ayarlardan çekiliyor (dinamik).
 3.  **Aktivite Logları:**
     *   Yapılan kritik işlemler (Sipariş onayı, transfer, yeni kayıt) sistem günlüğüne kaydediliyor.
+
+---
+
+## 📱 Mobil Uyumluluk ve UI İyileştirmeleri (Yeni)
+
+Siz dinlenirken yapılan son güncellemeler:
+
+### **📊 Gelişmiş Raporlar Sayfası (`/app/raporlar`)**
+*   **Sticky Tab Menü:** Üst menü artık sabit kalıyor ve mobilde yatay kaydırılabiliyor.
+*   **İkonlu Butonlar:** "Yazdır" ve "Yenile" butonları mobilde yer kaplamaması için ikon haline getirildi.
+*   **Kart Görünümü:** Tablolar (Maliyet, Siparişler, Loglar) mobilde otomatik olarak **kart görünümüne** dönüşüyor.
+
+### **🏢 Firmalar Sayfası (`/app/firmalar`)**
+*   **Mobil Kartlar:** Firma listesi mobilde tablo yerine kart olarak listeleniyor.
+*   **Responsive Düzen:** Kolonlar ekran boyutuna göre gizlenip açılıyor.
+
+### **✨ Animasyonlar**
+*   **Yumuşak Geçişler:** Sayfa ve sekme geçişlerine **Fade-In** (yavaşça belirme) animasyonu eklendi.
+*   **Loading State:** Veriler yüklenirken oluşan titreşimler engellendi.
+
+### **✅ Genel Kontroller**
+*   Üretim, Satınalma, Satış, Finans ve Operasyon sayfalarının mobil uyumluluğu kontrol edildi ve halihazırda mobil uyumlu (kart yapısı) oldukları doğrulandı.
 
 ---
 

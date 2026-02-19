@@ -120,32 +120,39 @@ export default function RaporlarPage() {
         <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8fafc] font-sans">
             <Sidebar />
             <main className="flex-1 min-w-0">
-                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center sticky top-0 z-30 shadow-sm gap-4">
+                <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 lg:py-5 flex flex-row justify-between items-center sticky top-0 z-30 shadow-sm gap-4">
                     <div>
                         <h1 className="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight">Gelişmiş Raporlar</h1>
-                        <p className="text-xs lg:text-sm text-slate-500">İşletmenizin tüm verilerini tek ekrandan inceleyin.</p>
+                        <p className="hidden lg:block text-xs lg:text-sm text-slate-500">İşletmenizin tüm verilerini tek ekrandan inceleyin.</p>
                     </div>
-                    <div className="flex gap-2">
-                        <ExportButton title="Genel Rapor" tableId="report-table" />
-                        <button onClick={fetchAllData} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition active:scale-95">
-                            🔄 Yenile
+                    <div className="flex gap-3">
+                        <ExportButton title="Genel Rapor" tableId="report-table" iconOnly={true} />
+                        <button
+                            onClick={fetchAllData}
+                            title="Verileri Yenile"
+                            className="bg-white border border-slate-200 text-slate-600 w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm hover:bg-slate-50 transition active:scale-95 group"
+                        >
+                            <span className="text-lg group-hover:rotate-180 transition duration-500">🔄</span>
                         </button>
                     </div>
                 </header>
 
                 {/* Tab Navigation */}
-                <div className="px-4 lg:px-8 pt-6">
-                    <div className="flex bg-white rounded-2xl border border-slate-200 p-1.5 shadow-sm overflow-x-auto">
+                <div className="sticky top-[73px] lg:top-[81px] z-20 bg-[#f8fafc]/90 backdrop-blur-md border-b border-slate-200/60 py-3 px-4 lg:px-8 shadow-sm">
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveSection(tab.id)}
-                                className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition whitespace-nowrap ${activeSection === tab.id
-                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200'
-                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                                    }`}
+                                className={`
+                                    snap-start shrink-0 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all border
+                                    ${activeSection === tab.id
+                                        ? 'bg-slate-800 text-white border-slate-800 shadow-md transform scale-105'
+                                        : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-slate-600'
+                                    }
+                                `}
                             >
-                                <span className="text-base">{tab.icon}</span>
+                                <span className="mr-2 text-sm">{tab.icon}</span>
                                 {tab.label}
                             </button>
                         ))}
@@ -162,7 +169,7 @@ export default function RaporlarPage() {
                         <>
                             {/* ===================== OVERVIEW ===================== */}
                             {activeSection === 'overview' && (
-                                <div className="space-y-8">
+                                <div className="space-y-8 animate-fade-in">
                                     {/* KPI Cards */}
                                     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                                         <KPICard icon="🌱" label="Toplam Stok" value={totalStock.toLocaleString()} color="emerald" />
@@ -224,7 +231,7 @@ export default function RaporlarPage() {
                                     {/* Tedarikçi Özet */}
                                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Tedarikçi Sipariş Özeti</h3>
-                                        <div className="overflow-x-auto">
+                                        <div className="hidden lg:block overflow-x-auto">
                                             <table className="w-full text-left text-sm" id="report-table">
                                                 <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                                                     <tr>
@@ -246,14 +253,19 @@ export default function RaporlarPage() {
                                                                 suppliers[s].total += p.totalAmount || 0;
                                                             }
                                                         });
-                                                        return Object.entries(suppliers).map(([name, data]) => (
-                                                            <tr key={name} className="hover:bg-slate-50">
-                                                                <td className="px-4 py-3 font-bold text-slate-700">{name}</td>
-                                                                <td className="px-4 py-3 text-center font-mono">{data.count}</td>
-                                                                <td className="px-4 py-3 text-center font-mono text-emerald-600">{data.completed}</td>
-                                                                <td className="px-4 py-3 text-right font-bold text-slate-800">₺{data.total.toLocaleString('tr-TR')}</td>
-                                                            </tr>
-                                                        ));
+                                                        const supplierEntries = Object.entries(suppliers);
+                                                        return (
+                                                            <>
+                                                                {supplierEntries.map(([name, data]) => (
+                                                                    <tr key={name} className="hover:bg-slate-50">
+                                                                        <td className="px-4 py-3 font-bold text-slate-700">{name}</td>
+                                                                        <td className="px-4 py-3 text-center font-mono">{data.count}</td>
+                                                                        <td className="px-4 py-3 text-center font-mono text-emerald-600">{data.completed}</td>
+                                                                        <td className="px-4 py-3 text-right font-bold text-slate-800">₺{data.total.toLocaleString('tr-TR')}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </>
+                                                        );
                                                     })()}
                                                     {purchases.length === 0 && (
                                                         <tr><td colSpan={4} className="py-8 text-center text-slate-400 italic">Sipariş kaydı yok.</td></tr>
@@ -261,13 +273,45 @@ export default function RaporlarPage() {
                                                 </tbody>
                                             </table>
                                         </div>
+
+                                        {/* Mobile Card View for Suppliers */}
+                                        <div className="lg:hidden space-y-3">
+                                            {(() => {
+                                                const suppliers: Record<string, { count: number, completed: number, total: number }> = {};
+                                                purchases.forEach(p => {
+                                                    const s = p.supplier || 'Bilinmeyen';
+                                                    if (!suppliers[s]) suppliers[s] = { count: 0, completed: 0, total: 0 };
+                                                    suppliers[s].count++;
+                                                    if (p.status === 'Tamamlandı') {
+                                                        suppliers[s].completed++;
+                                                        suppliers[s].total += p.totalAmount || 0;
+                                                    }
+                                                });
+                                                const supplierEntries = Object.entries(suppliers);
+
+                                                if (supplierEntries.length === 0) return <p className="text-slate-400 italic text-sm text-center py-6">Sipariş kaydı yok.</p>;
+
+                                                return supplierEntries.map(([name, data]) => (
+                                                    <div key={name} className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                                                        <div>
+                                                            <h4 className="font-bold text-slate-700 text-sm mb-1">{name}</h4>
+                                                            <div className="flex gap-2 text-[10px] text-slate-500">
+                                                                <span className="bg-white px-2 py-0.5 rounded border border-slate-200">Toplam: {data.count}</span>
+                                                                <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100">Tamamlanan: {data.completed}</span>
+                                                            </div>
+                                                        </div>
+                                                        <span className="font-bold text-slate-800 text-sm">₺{data.total.toLocaleString('tr-TR')}</span>
+                                                    </div>
+                                                ));
+                                            })()}
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
                             {/* ===================== MONTHLY ===================== */}
                             {activeSection === 'monthly' && (
-                                <div className="space-y-8">
+                                <div className="space-y-8 animate-fade-in">
                                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Aylık Gelir / Gider Karşılaştırması</h3>
                                         {monthlyData.length === 0 ? (
@@ -312,12 +356,12 @@ export default function RaporlarPage() {
 
                             {/* ===================== COST ANALYSIS ===================== */}
                             {activeSection === 'cost' && (
-                                <div className="space-y-8">
+                                <div className="space-y-8 animate-fade-in">
                                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                                         <div className="p-6 border-b border-slate-100 bg-slate-50/50">
                                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bitki Bazlı Maliyet Analizi (Üretim Partileri)</h3>
                                         </div>
-                                        <div className="overflow-x-auto">
+                                        <div className="hidden lg:block overflow-x-auto">
                                             <table className="w-full text-left text-sm">
                                                 <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                                     <tr>
@@ -354,6 +398,40 @@ export default function RaporlarPage() {
                                                     )}
                                                 </tbody>
                                             </table>
+                                        </div>
+
+                                        {/* Mobile Card View for Cost Analysis */}
+                                        <div className="lg:hidden divide-y divide-slate-100">
+                                            {plantCosts.map((pc, i) => (
+                                                <div key={i} className="p-4 first:pt-0">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div>
+                                                            <h4 className="font-bold text-slate-800 text-sm">{pc.name}</h4>
+                                                            <span className="text-[10px] text-emerald-600 font-mono bg-emerald-50 px-1.5 py-0.5 rounded">{pc.lotId}</span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className={`font-bold text-sm ${pc.unitCost > 5 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                                                ₺{pc.unitCost.toFixed(2)} <span className="text-[10px] text-slate-400 font-normal">/ adet</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-2 text-[10px] text-slate-500 mt-3">
+                                                        <div className="bg-slate-50 p-2 rounded text-center">
+                                                            <span className="block font-bold text-slate-700">{pc.quantity.toLocaleString()}</span>
+                                                            <span>Miktar</span>
+                                                        </div>
+                                                        <div className="bg-slate-50 p-2 rounded text-center">
+                                                            <span className="block font-bold text-slate-700">{pc.location}</span>
+                                                            <span>Konum</span>
+                                                        </div>
+                                                        <div className="bg-slate-50 p-2 rounded text-center">
+                                                            <span className="block font-bold text-slate-700">₺{pc.totalCost.toFixed(0)}</span>
+                                                            <span>Top. Mal.</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {plantCosts.length === 0 && <p className="text-slate-400 italic text-sm text-center py-6">Kayıt yok.</p>}
                                         </div>
                                     </div>
 
@@ -407,7 +485,7 @@ export default function RaporlarPage() {
 
                             {/* ===================== OPERATIONS ===================== */}
                             {activeSection === 'operations' && (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
                                     <div className="lg:col-span-2 space-y-8">
                                         <TemperatureChart data={temperatureLogs} />
 
@@ -416,7 +494,7 @@ export default function RaporlarPage() {
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">🌡️ Sera Sıcaklık Kayıtları</h3>
                                                 <span className="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-full">{temperatureLogs.length} Kayıt</span>
                                             </div>
-                                            <div className="overflow-x-auto">
+                                            <div className="hidden lg:block overflow-x-auto">
                                                 <table className="w-full text-left text-sm">
                                                     <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                                         <tr>
@@ -450,6 +528,42 @@ export default function RaporlarPage() {
                                                     </tbody>
                                                 </table>
                                             </div>
+
+                                            {/* Mobile Card View for Temperatures */}
+                                            <div className="lg:hidden space-y-3 p-4">
+                                                {temperatureLogs.slice(0, 10).map((log: any, i: number) => {
+                                                    const si = log.seraIci || {};
+                                                    const sd = log.seraDisi || {};
+                                                    const dateStr = log.date ? new Date(log.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) : '-';
+                                                    return (
+                                                        <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                            <div className="flex justify-between items-center mb-3">
+                                                                <span className="font-bold text-slate-700 text-sm">{dateStr}</span>
+                                                                {log.mazot && <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">⛽ {log.mazot} Lt</span>}
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                <div className="bg-white p-2 rounded-lg border border-orange-100">
+                                                                    <span className="block text-[9px] font-black text-orange-400 uppercase mb-1 text-center">Sera İçi</span>
+                                                                    <div className="flex justify-between text-xs font-bold text-orange-600">
+                                                                        <span>S:{si.sabah ?? '-'}</span>
+                                                                        <span>Ö:{si.ogle ?? '-'}</span>
+                                                                        <span>A:{si.aksam ?? '-'}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="bg-white p-2 rounded-lg border border-blue-100">
+                                                                    <span className="block text-[9px] font-black text-blue-400 uppercase mb-1 text-center">Dışarı</span>
+                                                                    <div className="flex justify-between text-xs font-bold text-blue-600">
+                                                                        <span>S:{sd.sabah ?? '-'}</span>
+                                                                        <span>Ö:{sd.ogle ?? '-'}</span>
+                                                                        <span>A:{sd.aksam ?? '-'}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {temperatureLogs.length === 0 && <p className="text-slate-400 italic text-sm text-center">Kayıt yok.</p>}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -460,7 +574,7 @@ export default function RaporlarPage() {
                                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">🌿 Gübre Uygulama</h3>
                                                 <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">{fertilizerLogs.length}</span>
                                             </div>
-                                            <div className="overflow-x-auto">
+                                            <div className="hidden lg:block overflow-x-auto">
                                                 <table className="w-full text-left text-sm">
                                                     <thead className="bg-white text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                                         <tr>
@@ -494,6 +608,31 @@ export default function RaporlarPage() {
                                                         )}
                                                     </tbody>
                                                 </table>
+                                            </div>
+
+                                            {/* Mobile Card View for Fertilizer Logs */}
+                                            <div className="lg:hidden space-y-3 p-4">
+                                                {fertilizerLogs.slice(0, 15).map((log: any, i: number) => {
+                                                    const dateStr = log.date ? new Date(log.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) : '-';
+                                                    const apps: string[] = [];
+                                                    if (log.fungusit) apps.push('🧪 Fungusit');
+                                                    if (log.aminoAsit) apps.push('💧 Amino Asit');
+                                                    if (log.start) apps.push('🚀 Start');
+                                                    if (log.note) apps.push(log.note);
+
+                                                    return (
+                                                        <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex justify-between items-center">
+                                                            <span className="font-bold text-slate-700 text-sm whitespace-nowrap mr-3">{dateStr}</span>
+                                                            <div className="flex flex-wrap gap-1 justify-end">
+                                                                {apps.map((a, j) => (
+                                                                    <span key={j} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-emerald-700 border border-emerald-100 shadow-sm">{a}</span>
+                                                                ))}
+                                                                {apps.length === 0 && <span className="text-[10px] text-slate-400">-</span>}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {fertilizerLogs.length === 0 && <p className="text-slate-400 italic text-sm text-center">Kayıt yok.</p>}
                                             </div>
                                         </div>
                                     </div>

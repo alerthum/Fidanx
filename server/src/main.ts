@@ -2,8 +2,41 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+    const request = ctx.getRequest();
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message = exception instanceof Error ? exception.message : 'Internal server error';
+    const stack = exception instanceof Error ? exception.stack : null;
+
+    console.error('[GlobalFilter] Error:', exception);
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      message: message,
+      error: exception instanceof HttpException ? exception.getResponse() : null,
+      stack: process.env.NODE_ENV !== 'production' ? stack : null,
+    });
+  }
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Global Exception Filter
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Global Prefix - Vercel ve standart uyumluluk için
   app.setGlobalPrefix('api');

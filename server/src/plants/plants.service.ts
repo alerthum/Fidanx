@@ -39,13 +39,23 @@ export class PlantsService {
     }
 
     async findAll(tenantId: string) {
-        const snapshot = await this.plants(tenantId).get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        try {
+            const snapshot = await this.plants(tenantId).get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error('PlantsService.findAll hatası:', error.message);
+            throw error;
+        }
     }
 
     async findOne(tenantId: string, id: string) {
-        const doc = await this.plants(tenantId).doc(id).get();
-        return doc.exists ? { id: doc.id, ...doc.data() } : null;
+        try {
+            const doc = await this.plants(tenantId).doc(id).get();
+            return doc.exists ? { id: doc.id, ...doc.data() } : null;
+        } catch (error) {
+            console.error(`PlantsService.findOne(${id}) hatası:`, error.message);
+            throw error;
+        }
     }
 
     async findCuttingsByMother(tenantId: string, motherId: string) {

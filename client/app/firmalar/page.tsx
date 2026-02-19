@@ -105,7 +105,8 @@ export default function FirmalarPage() {
 
                 <div className="flex-1 p-4 md:p-8">
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden w-full">
-                        <table className="w-full text-left border-collapse">
+                        {/* Desktop Table */}
+                        <table className="hidden lg:table w-full text-left border-collapse">
                             <thead className="bg-slate-50 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-200">
                                 <tr>
                                     <th className="px-6 py-4">Firma Ünvanı / VKN</th>
@@ -157,6 +158,49 @@ export default function FirmalarPage() {
                                 )}
                             </tbody>
                         </table>
+
+                        {/* Mobile Card View */}
+                        <div className="lg:hidden divide-y divide-slate-100">
+                            {Array.isArray(companies) && companies.map((company: any) => (
+                                <div key={company.id} className="p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h3 className="font-bold text-slate-800 text-sm">{company.name}</h3>
+                                            <p className="text-[10px] text-slate-400 font-mono">VKN: {company.taxNumber || '-'}</p>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                            {company.city}
+                                        </span>
+                                    </div>
+
+                                    <div className="text-xs text-slate-500 space-y-1 mb-3">
+                                        <p><span className="font-bold">Yetkili:</span> {company.contactPerson || '-'}</p>
+                                        <p><span className="font-bold">E-Posta:</span> {company.email || '-'}</p>
+                                        <p><span className="font-bold">Tel:</span> {company.phone || '-'}</p>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => openEditModal(company)}
+                                            className="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg text-xs font-bold active:scale-95 transition"
+                                        >
+                                            DÜZENLE
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(company.id)}
+                                            className="flex-1 bg-rose-50 text-rose-600 py-2 rounded-lg text-xs font-bold active:scale-95 transition"
+                                        >
+                                            SİL
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                            {(!Array.isArray(companies) || companies.length === 0) && (
+                                <div className="py-12 text-center text-slate-400 italic font-medium">
+                                    {!Array.isArray(companies) ? 'Veri alınamadı.' : 'Kayıtlı firma bulunamadı.'}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

@@ -31,13 +31,23 @@ export class TenantsService {
     }
 
     async findAll() {
-        const snapshot = await this.tenants.get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        try {
+            const snapshot = await this.tenants.get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error('TenantsService.findAll hatası:', error.message);
+            throw error;
+        }
     }
 
     async findOne(id: string) {
-        const doc = await this.tenants.doc(id).get();
-        return doc.exists ? { id: doc.id, ...doc.data() } : null;
+        try {
+            const doc = await this.tenants.doc(id).get();
+            return doc.exists ? { id: doc.id, ...doc.data() } : null;
+        } catch (error) {
+            console.error(`TenantsService.findOne(${id}) hatası:`, error.message);
+            throw error;
+        }
     }
 
     async updateSettings(id: string, settings: any) {
