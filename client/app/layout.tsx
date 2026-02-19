@@ -35,6 +35,7 @@ export const metadata: Metadata = {
   },
 };
 
+import { Providers } from "@/components/Providers";
 import BottomNavigation from "@/components/BottomNavigation";
 
 export default function RootLayout({
@@ -43,17 +44,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr">
+    <html lang="tr" suppressHydrationWarning>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 min-h-screen w-full pb-20 lg:pb-0`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 dark:bg-slate-900 min-h-screen w-full pb-20 lg:pb-0 transition-colors duration-300`}
       >
-        {children}
-        <BottomNavigation />
-        <NotificationCenter />
+        <Providers>
+          {children}
+          <BottomNavigation />
+        </Providers>
         <script
           dangerouslySetInnerHTML={{
             __html: `

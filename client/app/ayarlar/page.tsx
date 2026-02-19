@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import Sidebar from '@/components/Sidebar';
 
 export default function AyarlarPage() {
+    const { theme, setTheme } = useTheme();
     const [categories, setCategories] = useState<string[]>(['Meyve', 'Süs', 'Endüstriyel']);
     const [productionStages, setProductionStages] = useState<string[]>(['TEPSİ', 'KÜÇÜK_SAKSI', 'BÜYÜK_SAKSI', 'SATIŞA_HAZIR']);
     const [locations, setLocations] = useState<string[]>(['Sera 1', 'Sera 2', 'Açık Alan', 'Depo']);
@@ -318,7 +320,28 @@ export default function AyarlarPage() {
                 </header>
 
                 <div className="p-4 md:p-8 grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    {/* Kullanıcı Yönetimi */}
+                    {/* Tema Ayarları */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4 xl:col-span-2 dark:bg-slate-800 dark:border-slate-700">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h3 className="font-black text-slate-500 uppercase text-[10px] tracking-[0.2em] dark:text-slate-400">Görünüm & Tema</h3>
+                                <p className="text-xs text-slate-400 font-medium mt-1">Uygulamanın renk temasını seçin. (Bazı alanlar henüz Beta)</p>
+                            </div>
+                            <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl w-full sm:w-auto">
+                                {['light', 'dark', 'system'].map((t) => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setTheme(t)}
+                                        className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${theme === t
+                                            ? 'bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400'
+                                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                                    >
+                                        {t === 'light' ? '☀️ Aydınlık' : t === 'dark' ? '🌙 Karanlık' : '💻 Sistem'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
                             <h3 className="font-black text-slate-500 uppercase text-[10px] tracking-[0.2em]">Kullanıcı & Erişim Yönetimi</h3>

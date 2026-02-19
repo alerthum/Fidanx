@@ -315,6 +315,21 @@ export default function StoklarPage() {
                     </div>
                 </header>
 
+                {/* Critical Stock Alert Banner */}
+                {plants.filter(p => (p.currentStock || 0) <= (p.criticalStock || 10)).length > 0 && (
+                    <div className="mx-4 lg:mx-8 mt-6 bg-rose-50 border border-rose-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center text-xl shadow-inner">⚠️</div>
+                            <div>
+                                <h4 className="text-sm font-black text-rose-800 uppercase tracking-wide">Kritik Stok Uyarısı</h4>
+                                <p className="text-xs text-rose-600 font-medium mt-0.5">
+                                    Toplam <span className="font-bold underline">{plants.filter(p => (p.currentStock || 0) <= (p.criticalStock || 10)).length} ürün</span> kritik seviyenin altında. Tedarik planlaması yapmanız önerilir.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex-1 p-4 md:p-8 space-y-8">
                     {/* Error display omitted for brevity */}
 
