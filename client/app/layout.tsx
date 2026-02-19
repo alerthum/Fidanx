@@ -35,6 +35,8 @@ export const metadata: Metadata = {
   },
 };
 
+import BottomNavigation from "@/components/BottomNavigation";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -47,9 +49,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 min-h-screen w-full`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 min-h-screen w-full pb-20 lg:pb-0`}
       >
         {children}
+        <BottomNavigation />
         <NotificationCenter />
         <script
           dangerouslySetInnerHTML={{
