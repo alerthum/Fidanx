@@ -44,7 +44,7 @@ export default function NotificationCenter() {
     if (alerts.length === 0) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-24 lg:bottom-6 right-4 lg:right-6 z-50">
             {/* Toggle Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}

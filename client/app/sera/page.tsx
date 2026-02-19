@@ -149,8 +149,8 @@ export default function SeraPage() {
                     </button>
                 </div>
 
-                {/* Data Grid */}
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                {/* Desktop Data Grid */}
+                <div className="hidden lg:block bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
@@ -207,10 +207,134 @@ export default function SeraPage() {
                     </div>
                 </div>
 
+                {/* Mobile Weather-App Style Cards */}
+                <div className="lg:hidden space-y-4 pb-24">
+                    {logs.map(log => (
+                        <div key={log.id} className="relative overflow-hidden bg-white rounded-3xl shadow-[0_4px_20px_-8px_rgba(0,0,0,0.1)] border border-slate-100 p-5">
+                            {/* Decorative Background Blur */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100/40 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-100/40 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
+
+                            {/* Header: Date & Edit */}
+                            <div className="flex justify-between items-start mb-5 relative z-10">
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 older uppercase tracking-widest mb-0.5">
+                                        {new Date(log.date).toLocaleDateString('tr-TR', { weekday: 'long' })}
+                                    </p>
+                                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">
+                                        {new Date(log.date).getDate()} {new Date(log.date).toLocaleDateString('tr-TR', { month: 'long' })}
+                                    </h3>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => handleOpenModal(log)} className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl text-emerald-600 border border-slate-100 shadow-sm active:scale-95 transition">
+                                        ✏️
+                                    </button>
+                                    <button onClick={() => handleDelete(log.id)} className="w-10 h-10 flex items-center justify-center bg-rose-50 rounded-xl text-rose-500 border border-rose-100 shadow-sm active:scale-95 transition">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Weather Grid */}
+                            <div className="grid grid-cols-2 gap-3 mb-5 relative z-10">
+                                {/* Sera İçi Card */}
+                                <div className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-3 border border-orange-100/60 shadow-sm">
+                                    <div className="flex items-center gap-1.5 mb-3 opacity-80">
+                                        <span className="text-lg">🌡️</span>
+                                        <span className="text-[9px] font-black text-orange-400 uppercase tracking-tight">Sera İçi</span>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <span className="text-[10px] text-orange-300 font-bold block mb-0.5 uppercase">Öğle</span>
+                                            <div className="flex items-start">
+                                                <span className="text-3xl font-black text-slate-800 leading-none tracking-tighter">{log.seraIci?.ogle || '-'}</span>
+                                                <span className="text-sm font-bold text-orange-400 mt-1">°</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <div className="bg-white/60 px-2 py-1 rounded-md border border-orange-100/50 flex items-center gap-1">
+                                                <span className="text-[8px] font-bold text-orange-300">SBH</span>
+                                                <span className="text-[10px] font-bold text-orange-600">{log.seraIci?.sabah || '-'}°</span>
+                                            </div>
+                                            <div className="bg-white/60 px-2 py-1 rounded-md border border-orange-100/50 flex items-center gap-1">
+                                                <span className="text-[8px] font-bold text-orange-300">AKŞ</span>
+                                                <span className="text-[10px] font-bold text-orange-600">{log.seraIci?.aksam || '-'}°</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Dışarı Card */}
+                                <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-3 border border-blue-100/60 shadow-sm">
+                                    <div className="flex items-center gap-1.5 mb-3 opacity-80">
+                                        <span className="text-lg">☁️</span>
+                                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-tight">Dışarı</span>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <span className="text-[10px] text-blue-300 font-bold block mb-0.5 uppercase">Öğle</span>
+                                            <div className="flex items-start">
+                                                <span className="text-3xl font-black text-slate-800 leading-none tracking-tighter">{log.seraDisi?.ogle || '-'}</span>
+                                                <span className="text-sm font-bold text-blue-400 mt-1">°</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <div className="bg-white/60 px-2 py-1 rounded-md border border-blue-100/50 flex items-center gap-1">
+                                                <span className="text-[8px] font-bold text-blue-300">SBH</span>
+                                                <span className="text-[10px] font-bold text-blue-600">{log.seraDisi?.sabah || '-'}°</span>
+                                            </div>
+                                            <div className="bg-white/60 px-2 py-1 rounded-md border border-blue-100/50 flex items-center gap-1">
+                                                <span className="text-[8px] font-bold text-blue-300">AKŞ</span>
+                                                <span className="text-[10px] font-bold text-blue-600">{log.seraDisi?.aksam || '-'}°</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer Information */}
+                            {(log.mazot || log.note) && (
+                                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-50 relative z-10">
+                                    {log.mazot ? (
+                                        <div className="bg-slate-50 rounded-xl p-2 flex items-center gap-2 border border-slate-100">
+                                            <span className="text-lg">⛽</span>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Mazot</p>
+                                                <p className="text-xs font-bold text-slate-700">{log.mazot} Lt</p>
+                                            </div>
+                                        </div>
+                                    ) : <div />}
+
+                                    {log.note ? (
+                                        <div className="bg-slate-50 rounded-xl p-2 flex items-center gap-2 border border-slate-100 col-span-2 sm:col-span-1">
+                                            <span className="text-lg">📝</span>
+                                            <div className="min-w-0">
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Not</p>
+                                                <p className="text-xs font-medium text-slate-600 truncate">{log.note}</p>
+                                            </div>
+                                        </div>
+                                    ) : <div />}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+
+                    {logs.length === 0 && !loading && (
+                        <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 border-dashed">
+                            <span className="text-4xl block mb-2">🤷‍♂️</span>
+                            <p className="text-slate-400 font-bold">Henüz kayıt yok.</p>
+                            <button onClick={() => handleOpenModal()} className="mt-4 text-emerald-600 text-sm font-bold">İlk kaydı ekle</button>
+                        </div>
+                    )}
+                </div>
+
                 {/* Modal */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end lg:items-center justify-center p-0 lg:p-4 z-50">
+                        <div className="bg-white rounded-t-3xl rounded-b-none lg:rounded-3xl p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh] animate-slide-up lg:animate-none">
+                            <div className="flex justify-center mb-6 lg:hidden">
+                                <div className="w-16 h-1.5 bg-slate-200 rounded-full" />
+                            </div>
                             <h3 className="text-xl font-bold mb-6 text-slate-800">
                                 {formData.id ? 'Kaydı Güncelle' : 'Yeni Ölçüm / Sarfiyat Ekle'}
                             </h3>
