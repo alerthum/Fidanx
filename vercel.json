@@ -6,14 +6,14 @@
             "use": "@vercel/next"
         },
         {
-            "src": "server/src/main.ts",
+            "src": "server/src/vercel.ts",
             "use": "@vercel/node"
         }
     ],
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "server/src/main.ts"
+            "destination": "server/src/vercel.ts"
         },
         {
             "source": "/(.*)",
